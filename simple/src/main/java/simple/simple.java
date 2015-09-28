@@ -22,8 +22,9 @@ public class simple
 	static Shader diffuseShader;
 	static Material material;
 	static SimpleSceneManager sceneManager;
-	static Shape shape;
+	static Shape shape, shape2;
 	static float currentstep, basicstep;
+	static int exerciseNr = 1;
 
 	/**
 	 * An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
@@ -92,11 +93,22 @@ public class simple
 							 20,22,23, 20,21,22};	// bottom face
 
 			vertexData.addIndices(indices);
-								
+											
 			// Make a scene manager and add the object
 			sceneManager = new SimpleSceneManager();
 			shape = new Shape(vertexData);
 			sceneManager.addShape(shape);
+			
+
+    		Matrix4f trans = new Matrix4f();
+    		Vector3f vector = new Vector3f((float) 1/100, (float) 0, (float) 0);
+    		trans.setTranslation(vector);
+    		Matrix4f t2 = shape.getTransformation();
+    		t2.add(trans);
+    		shape.setTransformation(t2);
+    		
+    		
+
 
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
@@ -136,6 +148,324 @@ public class simple
 		    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
 		}
 	}
+		
+		public final static class CylinderRenderPanel extends GLRenderPanel
+		{
+			/**
+			 * Initialization call-back. We initialize our renderer here.
+			 * 
+			 * @param r	the render context that is associated with this render panel
+			 */
+			public final  void init(RenderContext r)
+			{
+				renderContext = r;
+				int segments = 6;
+				this.renderer(r, this.cylinder(segments));
+			}
+			
+		
+			public final VertexData cylinder(int segments)
+			{			
+				
+				// Make a simple geometric object: a cylinder
+				
+				// The vertex positions of the cylinder:
+				float[] v = new float[2*3*segments+2*3];
+				// The vertex positions of the round faces
+				for(int i=0; i<segments; i++)
+				{
+					v[6*i]=(float) Math.cos(2*Math.PI*i/segments);
+					v[6*i+1]=-1;
+					v[6*i+2]=(float) Math.sin(2*Math.PI*i/segments);
+					
+					v[6*i+3]=(float) Math.cos(2*Math.PI*i/segments);
+					v[6*i+3+1]=1;
+					v[6*i+3+2]=(float) Math.sin(2*Math.PI*i/segments);
+				}
+				
+				// Center of the bottom face
+				v[6*segments]= 0;
+				v[6*segments+1]=-1;
+				v[6*segments+2]=0;
+							
+				// Center of the top face
+				v[6*segments+3]=0;
+				v[6*segments+3+1]=1;
+				v[6*segments+3+2]=0;
+				
+				
+				// The vertex colors
+				// The vertex colors of the round faces
+				float[] c = new float[2*3*segments+2*3];
+				for(int i=0; i<segments; i++)
+				{
+					c[6*i]=(float) Math.floorMod(i, 2);
+					c[6*i+1]=(float) Math.floorMod(i, 2);
+					c[6*i+2]= (float)Math.floorMod(i, 2);
+					c[6*i+3]=(float) Math.floorMod(i, 2);
+					c[6*i+4]=(float) Math.floorMod(i, 2);
+					c[6*i+5]=(float) Math.floorMod(i, 2);				
+				}
+				
+				// The vertex colors of the top vertex
+				c[6*segments]= 0;
+				c[6*segments+1]=0;
+				c[6*segments+2]=0;
+							
+				// The vertex colors of the bottom vertex 
+				c[6*segments+3]=0;
+				c[6*segments+3+1]=0;
+				c[6*segments+3+2]=0;
+				
+				
+				
+				VertexData vertexData = renderContext.makeVertexData(2*segments+2);
+				vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
+				vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+				
+				// The triangles (three vertex indices for each triangle)
+				int[] indices = new int[4*3*segments];
+				// The triangles of the round faces
+				for(int i=0; i<segments; i++)
+				{
+					indices[6*i]=Math.floorMod(2*i, 2*segments);
+					indices[6*i+1]=Math.floorMod(2*i+3, 2*segments);
+					indices[6*i+2]=Math.floorMod(2*i+1, 2*segments);
+					
+					indices[6*i+3]=Math.floorMod(2*i, 2*segments);
+					indices[6*i+4]=Math.floorMod(2*i+2, 2*segments);
+					indices[6*i+5]=Math.floorMod(2*i+3, 2*segments);
+				}
+				
+				// The triangles of the bottom face
+				for(int i=0; i<segments; i++)
+				{
+					indices[6*segments+3*i]=Math.floorMod(2*i, 2*segments);
+					indices[6*segments+3*i+1]=2*segments;
+					indices[6*segments+3*i+2]=Math.floorMod(2*(i+1), 2*segments);
+				}
+				
+				// The triangles of the top face
+				for(int i=0; i<segments; i++)
+				{
+					indices[9*segments+3*i]=Math.floorMod(2*(i+1)+1, 2*segments);
+					indices[9*segments+3*i+1]=2*segments+1;
+					indices[9*segments+3*i+2]=Math.floorMod(2*i+1, 2*segments);
+				}
+				
+				vertexData.addIndices(indices);
+				
+				
+				return vertexData;
+			}
+			
+			public void renderer(RenderContext r, VertexData vertexData)
+			{
+				renderContext = r;
+												
+				// Make a scene manager and add the object
+				sceneManager = new SimpleSceneManager();
+				shape = new Shape(vertexData);
+				sceneManager.addShape(shape);
+		
+				// Add the scene to the renderer
+				renderContext.setSceneManager(sceneManager);
+				
+				// Load some more shaders
+			    normalShader = renderContext.makeShader();
+			    try {
+			    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+		
+			    diffuseShader = renderContext.makeShader();
+			    try {
+			    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+		
+			    // Make a material that can be used for shading
+				material = new Material();
+				material.shader = diffuseShader;
+				material.diffuseMap = renderContext.makeTexture();
+				try {
+					material.diffuseMap.load("../textures/plant.jpg");
+				} catch(Exception e) {				
+					System.out.print("Could not load texture.\n");
+					System.out.print(e.getMessage());
+				}
+		
+				// Register a timer task
+			    Timer timer = new Timer();
+			    basicstep = 0.01f;
+			    currentstep = basicstep;
+			    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
+			}
+		
+		}
+		
+		public final static class TorusRenderPanel extends GLRenderPanel
+		{
+			/**
+			 * Initialization call-back. We initialize our renderer here.
+			 * 
+			 * @param r	the render context that is associated with this render panel
+			 */
+			public final  void init(RenderContext r)
+			{
+				renderContext = r;
+				int segments = 6;
+				this.renderer(r, this.torus(segments));
+			}
+			
+		
+			public final VertexData torus(int segments)
+			{			
+				
+				// Make a simple geometric object: a torus
+				
+				// The vertex positions of the cylinder:
+				float[] v = new float[2*3*segments+2*3];
+				// The vertex positions of the round faces
+				for(int i=0; i<segments; i++)
+				{
+					v[6*i]=(float) Math.cos(2*Math.PI*i/segments);
+					v[6*i+1]=-1;
+					v[6*i+2]=(float) Math.sin(2*Math.PI*i/segments);
+					
+					v[6*i+3]=(float) Math.cos(2*Math.PI*i/segments);
+					v[6*i+3+1]=1;
+					v[6*i+3+2]=(float) Math.sin(2*Math.PI*i/segments);
+				}
+				
+				// Center of the bottom face
+				v[6*segments]= 0;
+				v[6*segments+1]=-1;
+				v[6*segments+2]=0;
+							
+				// Center of the top face
+				v[6*segments+3]=0;
+				v[6*segments+3+1]=1;
+				v[6*segments+3+2]=0;
+				
+				
+				// The vertex colors
+				// The vertex colors of the round faces
+				float[] c = new float[2*3*segments+2*3];
+				for(int i=0; i<segments; i++)
+				{
+					c[6*i]=(float) Math.floorMod(i, 2);
+					c[6*i+1]=(float) Math.floorMod(i, 2);
+					c[6*i+2]= (float)Math.floorMod(i, 2);
+					c[6*i+3]=(float) Math.floorMod(i, 2);
+					c[6*i+4]=(float) Math.floorMod(i, 2);
+					c[6*i+5]=(float) Math.floorMod(i, 2);				
+				}
+				
+				// The vertex colors of the top vertex
+				c[6*segments]= 0;
+				c[6*segments+1]=0;
+				c[6*segments+2]=0;
+							
+				// The vertex colors of the bottom vertex 
+				c[6*segments+3]=0;
+				c[6*segments+3+1]=0;
+				c[6*segments+3+2]=0;
+				
+				
+				
+				VertexData vertexData = renderContext.makeVertexData(2*segments+2);
+				vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
+				vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+				
+				// The triangles (three vertex indices for each triangle)
+				int[] indices = new int[4*3*segments];
+				// The triangles of the round faces
+				for(int i=0; i<segments; i++)
+				{
+					indices[6*i]=Math.floorMod(2*i, 2*segments);
+					indices[6*i+1]=Math.floorMod(2*i+3, 2*segments);
+					indices[6*i+2]=Math.floorMod(2*i+1, 2*segments);
+					
+					indices[6*i+3]=Math.floorMod(2*i, 2*segments);
+					indices[6*i+4]=Math.floorMod(2*i+2, 2*segments);
+					indices[6*i+5]=Math.floorMod(2*i+3, 2*segments);
+				}
+				
+				// The triangles of the bottom face
+				for(int i=0; i<segments; i++)
+				{
+					indices[6*segments+3*i]=Math.floorMod(2*i, 2*segments);
+					indices[6*segments+3*i+1]=2*segments;
+					indices[6*segments+3*i+2]=Math.floorMod(2*(i+1), 2*segments);
+				}
+				
+				// The triangles of the top face
+				for(int i=0; i<segments; i++)
+				{
+					indices[9*segments+3*i]=Math.floorMod(2*(i+1)+1, 2*segments);
+					indices[9*segments+3*i+1]=2*segments+1;
+					indices[9*segments+3*i+2]=Math.floorMod(2*i+1, 2*segments);
+				}
+				
+				vertexData.addIndices(indices);
+				
+				
+				return vertexData;
+			}
+			
+			public void renderer(RenderContext r, VertexData vertexData)
+			{
+				renderContext = r;
+												
+				// Make a scene manager and add the object
+				sceneManager = new SimpleSceneManager();
+				shape = new Shape(vertexData);
+				sceneManager.addShape(shape);
+		
+				// Add the scene to the renderer
+				renderContext.setSceneManager(sceneManager);
+				
+				// Load some more shaders
+			    normalShader = renderContext.makeShader();
+			    try {
+			    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+		
+			    diffuseShader = renderContext.makeShader();
+			    try {
+			    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+		
+			    // Make a material that can be used for shading
+				material = new Material();
+				material.shader = diffuseShader;
+				material.diffuseMap = renderContext.makeTexture();
+				try {
+					material.diffuseMap.load("../textures/plant.jpg");
+				} catch(Exception e) {				
+					System.out.print("Could not load texture.\n");
+					System.out.print(e.getMessage());
+				}
+		
+				// Register a timer task
+			    Timer timer = new Timer();
+			    basicstep = 0.01f;
+			    currentstep = basicstep;
+			    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
+			}
+		
+		}
 
 	/**
 	 * A timer task that generates an animation. This task triggers
@@ -232,7 +562,11 @@ public class simple
 						renderContext.useDefaultShader();
 					}
 					break;
-				}
+				}/*
+				case 'c':{
+					// Render the cylinder object
+					renderPanel.
+				}*/
 			}
 			
 			// Trigger redrawing
@@ -259,7 +593,17 @@ public class simple
 	{		
 		// Make a render panel. The init function of the renderPanel
 		// (see above) will be called back for initialization.
-		renderPanel = new SimpleRenderPanel();
+		
+		switch(exerciseNr)
+		{
+			case 1:{
+				renderPanel = new CylinderRenderPanel();
+				break;
+			}
+			default:
+				renderPanel = new SimpleRenderPanel();
+				break;
+		}
 		
 		// Make the main window of this application and add the renderer to it
 		JFrame jframe = new JFrame("simple");
