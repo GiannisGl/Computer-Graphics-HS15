@@ -24,7 +24,7 @@ public class simple
 	static SimpleSceneManager sceneManager;
 	static Shape shape, shape2;
 	static float currentstep, basicstep;
-	static int exerciseNr = 1;
+	static int exerciseNr = 2;
 
 	/**
 	 * An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
@@ -318,7 +318,7 @@ public class simple
 			public final  void init(RenderContext r)
 			{
 				renderContext = r;
-				int segments = 6;
+				int segments = 20;
 				this.renderer(r, this.torus(segments));
 			}
 			
@@ -329,87 +329,84 @@ public class simple
 				// Make a simple geometric object: a torus
 				
 				// The vertex positions of the cylinder:
-				float[] v = new float[2*3*segments+2*3];
-				// The vertex positions of the round faces
+				float[] v = new float[4*3*segments];
 				for(int i=0; i<segments; i++)
 				{
-					v[6*i]=(float) Math.cos(2*Math.PI*i/segments);
-					v[6*i+1]=-1;
-					v[6*i+2]=(float) Math.sin(2*Math.PI*i/segments);
+					v[12*i]=(float) (3*Math.cos(2*Math.PI*i/segments));
+					v[12*i+1]=-1;
+					v[12*i+2]=(float) (3*Math.sin(2*Math.PI*i/segments));
 					
-					v[6*i+3]=(float) Math.cos(2*Math.PI*i/segments);
-					v[6*i+3+1]=1;
-					v[6*i+3+2]=(float) Math.sin(2*Math.PI*i/segments);
+					v[12*i+3]=(float) (4*Math.cos(2*Math.PI*i/segments));
+					v[12*i+3+1]=0;
+					v[12*i+3+2]=(float) (4*Math.sin(2*Math.PI*i/segments));
+					
+					v[12*i+6]=(float) (3*Math.cos(2*Math.PI*i/segments));
+					v[12*i+6+1]=1;
+					v[12*i+6+2]=(float) (3*Math.sin(2*Math.PI*i/segments));
+					
+					v[12*i+9]=(float) (2*Math.cos(2*Math.PI*i/segments));
+					v[12*i+9+1]=0;
+					v[12*i+9+2]=(float) (2*Math.sin(2*Math.PI*i/segments));
 				}
-				
-				// Center of the bottom face
-				v[6*segments]= 0;
-				v[6*segments+1]=-1;
-				v[6*segments+2]=0;
-							
-				// Center of the top face
-				v[6*segments+3]=0;
-				v[6*segments+3+1]=1;
-				v[6*segments+3+2]=0;
-				
 				
 				// The vertex colors
-				// The vertex colors of the round faces
-				float[] c = new float[2*3*segments+2*3];
+				float[] c = new float[4*3*segments];
 				for(int i=0; i<segments; i++)
 				{
-					c[6*i]=(float) Math.floorMod(i, 2);
-					c[6*i+1]=(float) Math.floorMod(i, 2);
-					c[6*i+2]= (float)Math.floorMod(i, 2);
-					c[6*i+3]=(float) Math.floorMod(i, 2);
-					c[6*i+4]=(float) Math.floorMod(i, 2);
-					c[6*i+5]=(float) Math.floorMod(i, 2);				
+					c[12*i]=(float) Math.floorMod(i, 2);
+					c[12*i+1]=(float) Math.floorMod(i, 2);
+					c[12*i+2]= (float)Math.floorMod(i, 2);
+					c[12*i+3]=(float) Math.floorMod(i, 2);
+					c[12*i+4]=(float) Math.floorMod(i, 2);
+					c[12*i+5]=(float) Math.floorMod(i, 2);
+					c[12*i+6]=(float) Math.floorMod(i, 2);
+					c[12*i+7]=(float) Math.floorMod(i, 2);
+					c[12*i+8]=(float) Math.floorMod(i, 2);
+					c[12*i+9]=(float) Math.floorMod(i, 2);
+					c[12*i+10]=(float) Math.floorMod(i, 2);
+					c[12*i+11]=(float) Math.floorMod(i, 2);
 				}
+								
 				
-				// The vertex colors of the top vertex
-				c[6*segments]= 0;
-				c[6*segments+1]=0;
-				c[6*segments+2]=0;
-							
-				// The vertex colors of the bottom vertex 
-				c[6*segments+3]=0;
-				c[6*segments+3+1]=0;
-				c[6*segments+3+2]=0;
-				
-				
-				
-				VertexData vertexData = renderContext.makeVertexData(2*segments+2);
+				VertexData vertexData = renderContext.makeVertexData(4*segments);
 				vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
 				vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
 				
 				// The triangles (three vertex indices for each triangle)
-				int[] indices = new int[4*3*segments];
-				// The triangles of the round faces
+				int[] indices = new int[8*3*segments];
 				for(int i=0; i<segments; i++)
 				{
-					indices[6*i]=Math.floorMod(2*i, 2*segments);
-					indices[6*i+1]=Math.floorMod(2*i+3, 2*segments);
-					indices[6*i+2]=Math.floorMod(2*i+1, 2*segments);
+					indices[24*i]=Math.floorMod(4*i, 4*segments);
+					indices[24*i+1]=Math.floorMod(4*(i+1), 4*segments);
+					indices[24*i+2]=Math.floorMod(4*(i+1)+1, 4*segments);
 					
-					indices[6*i+3]=Math.floorMod(2*i, 2*segments);
-					indices[6*i+4]=Math.floorMod(2*i+2, 2*segments);
-					indices[6*i+5]=Math.floorMod(2*i+3, 2*segments);
-				}
-				
-				// The triangles of the bottom face
-				for(int i=0; i<segments; i++)
-				{
-					indices[6*segments+3*i]=Math.floorMod(2*i, 2*segments);
-					indices[6*segments+3*i+1]=2*segments;
-					indices[6*segments+3*i+2]=Math.floorMod(2*(i+1), 2*segments);
-				}
-				
-				// The triangles of the top face
-				for(int i=0; i<segments; i++)
-				{
-					indices[9*segments+3*i]=Math.floorMod(2*(i+1)+1, 2*segments);
-					indices[9*segments+3*i+1]=2*segments+1;
-					indices[9*segments+3*i+2]=Math.floorMod(2*i+1, 2*segments);
+					indices[24*i+3]=Math.floorMod(4*i, 4*segments);
+					indices[24*i+4]=Math.floorMod(4*(i+1)+1, 4*segments);
+					indices[24*i+5]=Math.floorMod(4*i+1, 4*segments);
+					
+					indices[24*i+6]=Math.floorMod(4*i+1, 4*segments);
+					indices[24*i+7]=Math.floorMod(4*(i+1)+1, 4*segments);
+					indices[24*i+8]=Math.floorMod(4*(i+1)+2, 4*segments);
+					
+					indices[24*i+9]=Math.floorMod(4*i+1, 4*segments);
+					indices[24*i+10]=Math.floorMod(4*(i+1)+2, 4*segments);
+					indices[24*i+11]=Math.floorMod(4*i+2, 4*segments);
+					
+					indices[24*i+12]=Math.floorMod(4*i+2, 4*segments);
+					indices[24*i+13]=Math.floorMod(4*(i+1)+2, 4*segments);
+					indices[24*i+14]=Math.floorMod(4*(i+1)+3, 4*segments);
+					
+					indices[24*i+15]=Math.floorMod(4*i+2, 4*segments);
+					indices[24*i+16]=Math.floorMod(4*(i+1)+3, 4*segments);
+					indices[24*i+17]=Math.floorMod(4*i+3, 4*segments);
+					
+					indices[24*i+18]=Math.floorMod(4*i+3, 4*segments);
+					indices[24*i+19]=Math.floorMod(4*(i+1)+3, 4*segments);
+					indices[24*i+20]=Math.floorMod(4*(i+1), 4*segments);
+					
+					indices[24*i+21]=Math.floorMod(4*i+3, 4*segments);
+					indices[24*i+22]=Math.floorMod(4*(i+1), 4*segments);
+					indices[24*i+23]=Math.floorMod(4*i, 4*segments);
 				}
 				
 				vertexData.addIndices(indices);
@@ -562,11 +559,7 @@ public class simple
 						renderContext.useDefaultShader();
 					}
 					break;
-				}/*
-				case 'c':{
-					// Render the cylinder object
-					renderPanel.
-				}*/
+				}
 			}
 			
 			// Trigger redrawing
@@ -598,6 +591,10 @@ public class simple
 		{
 			case 1:{
 				renderPanel = new CylinderRenderPanel();
+				break;
+			}
+			case 2:{
+				renderPanel = new TorusRenderPanel();
 				break;
 			}
 			default:
