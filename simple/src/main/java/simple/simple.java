@@ -24,7 +24,7 @@ public class simple
 	static SimpleSceneManager sceneManager;
 	static Shape shape, shape2;
 	static float currentstep, basicstep;
-	static int exerciseNr = 2;
+	static int exerciseNr = 0;
 
 	/**
 	 * An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
@@ -101,11 +101,11 @@ public class simple
 			
 
     		Matrix4f trans = new Matrix4f();
-    		Vector3f vector = new Vector3f((float) 1/100, (float) 0, (float) 0);
+    		Vector3f vector = new Vector3f(4f, 0f, 0f);
     		trans.setTranslation(vector);
-    		Matrix4f t2 = shape.getTransformation();
-    		t2.add(trans);
-    		shape.setTransformation(t2);
+    		Matrix4f t = shape.getTransformation();
+    		t.add(trans);
+    		shape.setTransformation(t);
     		
     		
 
@@ -463,6 +463,8 @@ public class simple
 			}
 		
 		}
+		
+		
 
 	/**
 	 * A timer task that generates an animation. This task triggers
@@ -472,18 +474,41 @@ public class simple
 	{
 		public void run()
 		{
-			// Update transformation by rotating with angle "currentstep"
-    		Matrix4f t = shape.getTransformation();
-    		Matrix4f rotX = new Matrix4f();
-    		rotX.rotX(currentstep);
-    		Matrix4f rotY = new Matrix4f();
-    		rotY.rotY(currentstep);
-    		t.mul(rotX);
-    		t.mul(rotY);
-    		shape.setTransformation(t);
-    		
-    		// Trigger redrawing of the render window
-    		renderPanel.getCanvas().repaint(); 
+			
+			if(exerciseNr>=1 && exerciseNr <=2)
+			{
+				// Update transformation by rotating with angle "currentstep"
+	    		Matrix4f t = shape.getTransformation();
+	    		Matrix4f rotX = new Matrix4f();
+	    		rotX.rotX(currentstep);
+	    		Matrix4f rotY = new Matrix4f();
+	    		rotY.rotY(currentstep);
+	    		t.mul(rotX);
+	    		t.mul(rotY);	
+	    		shape.setTransformation(t);
+			}
+			else{	
+				// Update transformation by rotating with angle "currentstep"
+				Matrix4f t = shape.getTransformation();
+				Matrix4f rotX = new Matrix4f();
+				rotX.rotX(currentstep);
+				Matrix4f rotY = new Matrix4f();
+				rotY.rotY(currentstep);
+				Matrix4f rotY0 = new Matrix4f();
+				Vector3f vector = new Vector3f(0f, 1f, 0f);
+				AxisAngle4f a = new AxisAngle4f(vector, 1/10f);
+				rotY0.setRow(0, (float) Math.cos(Math.PI/180*100*currentstep) , 0, (float) Math.sin(Math.PI/180*100*currentstep), 0);
+				rotY0.setRow(1, 0, 1, 0, 0);
+				rotY0.setRow(2, (float) -Math.sin(Math.PI/180*100*currentstep) , 0, (float) Math.cos(Math.PI/180*100*currentstep), 0);
+				rotY0.setRow(3, 0 , 0, 0, 1);    		
+				t.mul(rotX);
+				t.mul(rotY);
+				rotY0.mul(t);
+				shape.setTransformation(rotY0);
+			}
+				
+				// Trigger redrawing of the render window
+				renderPanel.getCanvas().repaint(); 
 		}
 	}
 
