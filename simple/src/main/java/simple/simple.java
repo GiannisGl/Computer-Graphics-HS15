@@ -290,94 +290,61 @@ public class simple
 			{
 				renderContext = r;
 				int segments = 20;
-				this.renderer(r, torus(segments));
+				int hSegments = 20;
+				int centralRadius = 2;
+				int radius = 1;
+				this.renderer(r, torus(segments, hSegments, centralRadius, radius));
 			}
 			
 		
-			public static final Shape torus(int segments)
+			public static final Shape torus(int segments, int hSegments, int centralRadius, int radius)
 			{			
 				
 				// Make a simple geometric object: a torus
 				
 				// The vertex positions of the cylinder:
-				float[] v = new float[4*3*segments];
+				float[] v = new float[hSegments*3*segments];
 				for(int i=0; i<segments; i++)
 				{
-					v[12*i]=(float) (2*Math.cos(2*Math.PI*i/segments));
-					v[12*i+1]=-1;
-					v[12*i+2]=(float) (2*Math.sin(2*Math.PI*i/segments));
-					
-					v[12*i+3]=(float) (3*Math.cos(2*Math.PI*i/segments));
-					v[12*i+3+1]=0;
-					v[12*i+3+2]=(float) (3*Math.sin(2*Math.PI*i/segments));
-					
-					v[12*i+6]=(float) (2*Math.cos(2*Math.PI*i/segments));
-					v[12*i+6+1]=1;
-					v[12*i+6+2]=(float) (2*Math.sin(2*Math.PI*i/segments));
-					
-					v[12*i+9]=(float) (1*Math.cos(2*Math.PI*i/segments));
-					v[12*i+9+1]=0;
-					v[12*i+9+2]=(float) (1*Math.sin(2*Math.PI*i/segments));
+					for(int j=0; j<hSegments; j++)
+					{
+						v[hSegments*3*i+3*j] = (float) ((radius*Math.cos(2*Math.PI*j/hSegments)+centralRadius)*Math.cos(2*Math.PI*i/segments));
+						v[hSegments*3*i+3*j+1] = (float) (radius*Math.sin(2*Math.PI*j/hSegments));
+						v[hSegments*3*i+3*j+2] = (float) ((radius*Math.cos(2*Math.PI*j/hSegments)+centralRadius)*Math.sin(2*Math.PI*i/segments));
+					}
 				}
 				
 				// The vertex colors
-				float[] c = new float[4*3*segments];
+				float[] c = new float[hSegments*3*segments];
 				for(int i=0; i<segments; i++)
 				{
-					c[12*i]=(float) Math.floorMod(i, 2);
-					c[12*i+1]=(float) Math.floorMod(i, 2);
-					c[12*i+2]= (float)Math.floorMod(i, 2);
-					c[12*i+3]=(float) Math.floorMod(i, 2);
-					c[12*i+4]=(float) Math.floorMod(i, 2);
-					c[12*i+5]=(float) Math.floorMod(i, 2);
-					c[12*i+6]=(float) Math.floorMod(i, 2);
-					c[12*i+7]=(float) Math.floorMod(i, 2);
-					c[12*i+8]=(float) Math.floorMod(i, 2);
-					c[12*i+9]=(float) Math.floorMod(i, 2);
-					c[12*i+10]=(float) Math.floorMod(i, 2);
-					c[12*i+11]=(float) Math.floorMod(i, 2);
+					for(int j=0; j<hSegments; j++)
+					{
+						c[hSegments*3*i+3*j]=(float) Math.floorMod(i, 2);
+						c[hSegments*3*i+3*j+1]=(float) Math.floorMod(i, 2);
+						c[hSegments*3*i+3*j+2]=(float) Math.floorMod(i, 2);
+					}
 				}
 								
 				
-				VertexData vertexData = renderContext.makeVertexData(4*segments);
+				VertexData vertexData = renderContext.makeVertexData(hSegments*segments);
 				vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
 				vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
 				
 				// The triangles (three vertex indices for each triangle)
-				int[] indices = new int[8*3*segments];
+				int[] indices = new int[2*hSegments*3*segments];
 				for(int i=0; i<segments; i++)
 				{
-					indices[24*i]=Math.floorMod(4*i, 4*segments);
-					indices[24*i+1]=Math.floorMod(4*(i+1), 4*segments);
-					indices[24*i+2]=Math.floorMod(4*(i+1)+1, 4*segments);
-					
-					indices[24*i+3]=Math.floorMod(4*i, 4*segments);
-					indices[24*i+4]=Math.floorMod(4*(i+1)+1, 4*segments);
-					indices[24*i+5]=Math.floorMod(4*i+1, 4*segments);
-					
-					indices[24*i+6]=Math.floorMod(4*i+1, 4*segments);
-					indices[24*i+7]=Math.floorMod(4*(i+1)+1, 4*segments);
-					indices[24*i+8]=Math.floorMod(4*(i+1)+2, 4*segments);
-					
-					indices[24*i+9]=Math.floorMod(4*i+1, 4*segments);
-					indices[24*i+10]=Math.floorMod(4*(i+1)+2, 4*segments);
-					indices[24*i+11]=Math.floorMod(4*i+2, 4*segments);
-					
-					indices[24*i+12]=Math.floorMod(4*i+2, 4*segments);
-					indices[24*i+13]=Math.floorMod(4*(i+1)+2, 4*segments);
-					indices[24*i+14]=Math.floorMod(4*(i+1)+3, 4*segments);
-					
-					indices[24*i+15]=Math.floorMod(4*i+2, 4*segments);
-					indices[24*i+16]=Math.floorMod(4*(i+1)+3, 4*segments);
-					indices[24*i+17]=Math.floorMod(4*i+3, 4*segments);
-					
-					indices[24*i+18]=Math.floorMod(4*i+3, 4*segments);
-					indices[24*i+19]=Math.floorMod(4*(i+1)+3, 4*segments);
-					indices[24*i+20]=Math.floorMod(4*(i+1), 4*segments);
-					
-					indices[24*i+21]=Math.floorMod(4*i+3, 4*segments);
-					indices[24*i+22]=Math.floorMod(4*(i+1), 4*segments);
-					indices[24*i+23]=Math.floorMod(4*i, 4*segments);
+					for(int j=0; j<hSegments; j++)
+					{
+						indices[2*hSegments*3*i+6*j]=Math.floorMod(hSegments*Math.floorMod(i, segments)+Math.floorMod(j,hSegments),hSegments*segments);
+						indices[2*hSegments*3*i+6*j+1]=Math.floorMod(hSegments*Math.floorMod(i+1, segments)+Math.floorMod(j,hSegments),hSegments*segments);
+						indices[2*hSegments*3*i+6*j+2]=Math.floorMod(hSegments*Math.floorMod(i+1, segments)+Math.floorMod(j+1,hSegments),hSegments*segments);
+						
+						indices[2*hSegments*3*i+6*j+3]=Math.floorMod(hSegments*Math.floorMod(i, segments)+Math.floorMod(j,hSegments),hSegments*segments);
+						indices[2*hSegments*3*i+6*j+4]=Math.floorMod(hSegments*Math.floorMod(i+1, segments)+Math.floorMod(j+1,hSegments),hSegments*segments);
+						indices[2*hSegments*3*i+6*j+5]=Math.floorMod(hSegments*Math.floorMod(i, segments)+Math.floorMod(j+1,hSegments),hSegments*segments);
+					}
 				}
 				
 				vertexData.addIndices(indices);
@@ -417,7 +384,7 @@ public class simple
 		{
 			renderContext = r;
 			// shape1, inner torus
-			shape = TorusRenderPanel.torus(10);
+			shape = TorusRenderPanel.torus(10 , 10, 2, 1);
     		Matrix4f t = shape.getTransformation();
     		t.setScale(0.5f);
 			Matrix4f trans = new Matrix4f();
@@ -427,7 +394,7 @@ public class simple
     		shape.setTransformation(t);
     				
     		// shape2, outer torus
-			shape2 = TorusRenderPanel.torus(10);
+			shape2 = TorusRenderPanel.torus(10, 10, 2, 1);
     		Matrix4f t2 = shape2.getTransformation();
     		t2.setScale(0.5f);
 			Matrix4f trans2 = new Matrix4f();
