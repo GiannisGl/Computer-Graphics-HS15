@@ -159,7 +159,7 @@ public class simple
 			public final  void init(RenderContext r)
 			{
 				renderContext = r;
-				int segments = 6;
+				int segments = 23;
 				this.renderer(r,cylinder(segments));
 			}
 			
@@ -292,12 +292,12 @@ public class simple
 				int segments = 20;
 				int hSegments = 20;
 				int centralRadius = 2;
-				int radius = 1;
+				float radius = 0.5f;
 				this.renderer(r, torus(segments, hSegments, centralRadius, radius));
 			}
 			
 		
-			public static final Shape torus(int segments, int hSegments, int centralRadius, int radius)
+			public static final Shape torus(int segments, int hSegments, int centralRadius, float radius)
 			{			
 				
 				// Make a simple geometric object: a torus
@@ -506,7 +506,7 @@ public class simple
 				// shape3, middle cylinder
 				Matrix4f t3 = shape3.getTransformation();
 				Matrix4f rotZ = new Matrix4f();
-				rotZ.rotY((float) Math.PI/180*100*5*currentstep);
+				rotZ.rotY((float) -Math.PI/180*100*5*currentstep);
 				t3.mul(rotZ);
 				Matrix4f rotY03 = (Matrix4f) rotY0.clone();   
 				rotY03.mul(t3);
