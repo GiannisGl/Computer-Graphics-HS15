@@ -1,5 +1,7 @@
 package simple;
 
+import java.util.Random;
+
 import jrtr.*;
 
 public final class FractalLandscape
@@ -42,8 +44,8 @@ public final class FractalLandscape
 		for(int i=0; i<sqSize; i++)
 		{
 			v[3*i]=(float) diffLength*Math.floorDiv(i, size);
-			v[3*i+1]=(float) diffWidth*Math.floorMod(i, size);
-			v[3*i+2]=(float) heightsArray[Math.floorDiv(i, size)][Math.floorMod(i, size)];
+			v[3*i+1]=(float) heightsArray[Math.floorDiv(i, size)][Math.floorMod(i, size)];
+			v[3*i+2]=(float) diffWidth*Math.floorMod(i, size);
 		}
 		
 		
@@ -54,9 +56,9 @@ public final class FractalLandscape
 		{
 			double height = heightsArray[Math.floorDiv(i, size)][Math.floorMod(i, size)];
 			float ratio = (float) (height/(maxHeight+1f));
-			c[3*i]= ratio;
-			c[3*i+1]= 0.3f;
-			c[3*i+2]= ratio;
+			c[3*i]= height<maxHeight*0.6f ? 0f:  (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
+			c[3*i+1]= height<maxHeight*0.6f ? (float) (ratio*ratio*0.2f+0.3f): (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
+			c[3*i+2]= height<maxHeight*0.6f ? 0f: (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
 		}
 		
 		
@@ -89,12 +91,12 @@ public final class FractalLandscape
 			for(int col=0; col<totalNrHorSquares; col++)
 			{
 				indices[2*3*(row*totalNrHorSquares+col)]= row*size+col;
-				indices[2*3*(row*totalNrHorSquares+col)+1]= (row+1)*size+col+1;
-				indices[2*3*(row*totalNrHorSquares+col)+2]= row*size+col+1;
+				indices[2*3*(row*totalNrHorSquares+col)+1]= row*size+col+1;
+				indices[2*3*(row*totalNrHorSquares+col)+2]= (row+1)*size+col+1;
 				
 				indices[2*3*(row*totalNrHorSquares+col)+3]= row*size+col;
-				indices[2*3*(row*totalNrHorSquares+col)+4]= (row+1)*size+col;
-				indices[2*3*(row*totalNrHorSquares+col)+5]= (row+1)*size+col+1;
+				indices[2*3*(row*totalNrHorSquares+col)+4]= (row+1)*size+col+1;
+				indices[2*3*(row*totalNrHorSquares+col)+5]= (row+1)*size+col;
 			}
 		}
 		
@@ -116,7 +118,7 @@ public final class FractalLandscape
 		int size = heightsArray.length;
 		int nrHorSquares = (int) Math.pow(2, (iteration-1));
 		int sqRadius = (int) size/(2*nrHorSquares);
-		double divRange = (double) 1/nrHorSquares;
+		double divRange = (double) maxHeight/(4*nrHorSquares);
 		
 		if(heightsArray.length!=heightsArray[0].length)
 		{
@@ -141,7 +143,7 @@ public final class FractalLandscape
 				double drCorner = heightsArray[x+sqRadius][y+sqRadius];
 								
 				// Square step
-				heightsArray[x][y]=(tlCorner+trCorner+dlCorner+drCorner)/4+((float) Math.random())*divRange;
+				heightsArray[x][y]=(tlCorner+trCorner+dlCorner+drCorner)/4+(float) (2*Math.random()-1)*divRange;
 				
 				x= (int) x+2*sqRadius*Math.floorDiv(y+2*sqRadius, size-1);
 				y= (int) Math.floorMod(y+2*sqRadius, size-1);
@@ -164,7 +166,7 @@ public final class FractalLandscape
 				double dDiamond = x+sqRadius<size? heightsArray[x+sqRadius][y]: 0;
 				diamondVertices = x+sqRadius<size? diamondVertices:--diamondVertices;
 				
-				heightsArray[x][y]=(lDiamond+tDiamond+rDiamond+dDiamond)/diamondVertices+((float) Math.random())*divRange;
+				heightsArray[x][y]=(lDiamond+tDiamond+rDiamond+dDiamond)/diamondVertices+(float) (2*Math.random()-1)*divRange;
 				
 
 				x= (int) x+2*sqRadius*Math.floorDiv(y+2*sqRadius, size-1);
@@ -187,11 +189,11 @@ public final class FractalLandscape
 				double dDiamond = x+sqRadius<size? heightsArray[x+sqRadius][y]: 0;
 				diamondVertices = x+sqRadius<size? diamondVertices:--diamondVertices;
 				
-				heightsArray[x][y]=(lDiamond+tDiamond+rDiamond+dDiamond)/diamondVertices+((float) Math.random())*divRange;
+				heightsArray[x][y]=(lDiamond+tDiamond+rDiamond+dDiamond)/diamondVertices+(float) (2*Math.random()-1)*divRange;
 				
 
-				x= (int) x+2*sqRadius*Math.floorDiv(y+2*sqRadius, size+1);
-				y= (int) Math.floorMod(y+2*sqRadius, size+1);
+				x= (int) x+2*sqRadius*Math.floorDiv(y+2*sqRadius, size+2*sqRadius-1);
+				y= (int) Math.floorMod(y+2*sqRadius, size+2*sqRadius-1);
 			}
 			
 			return diamondsAndSquaresAlg(heightsArray, maxHeight, iteration+1);

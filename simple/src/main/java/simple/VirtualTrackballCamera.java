@@ -62,14 +62,6 @@ public class VirtualTrackballCamera
 				e1.printStackTrace();
 			}
 			
-			/*
-			FractalLandscape frac = new FractalLandscape(r);
-			Shape shape1 = frac.fractal(6, 1, 1, 1);
-			
-			Matrix4f t = new Matrix4f();
-			t.setTranslation(new Vector3f(-0.5f, 0.5f, 0));
-			shape1.setTransformation(t);
-			*/
 			Shape shape1 = new Shape(vertexData);
 			this.renderer(r, shape1);			
 		}
@@ -311,7 +303,7 @@ public class VirtualTrackballCamera
 		// (see above) will be called back for initialization.
 		renderPanel = new MyRenderPanel();
 		// Make the main window of this application and add the renderer to it
-		JFrame jframe = new JFrame("simple");
+		JFrame jframe = new JFrame("VirtualTrackballCamera");
 		jframe.setSize(width, height);
 		jframe.setLocationRelativeTo(null); // center of screen
 		jframe.getContentPane().add(renderPanel.getCanvas());// put the canvas into a JFrame window

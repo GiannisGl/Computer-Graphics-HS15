@@ -2,9 +2,6 @@ package simple;
 
 import jrtr.*;
 import jrtr.glrenderer.*;
-import simple.simple.SimpleKeyListener;
-import simple.simple.SimpleMouseListener;
-import jrtr.gldeferredrenderer.*;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -623,13 +620,13 @@ public class simple2
 	{		
 		// Make a render panel. The init function of the renderPanel
 		// (see above) will be called back for initialization.
-		/*
+		
 		System.out.println("Which exercise?");
 		do{
 			exerciseNr = new Scanner(System.in).nextInt();
 		}
 		while(exerciseNr<0 && exerciseNr>3);
-		 */
+		 
 		switch(exerciseNr)
 		{
 			case 1:{

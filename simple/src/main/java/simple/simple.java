@@ -5,6 +5,8 @@ import jrtr.glrenderer.*;
 
 import javax.swing.*;
 import java.awt.event.*;
+import java.io.IOException;
+
 import javax.vecmath.*;
 
 import java.util.Scanner;
@@ -23,9 +25,18 @@ public class simple
 	static Shader diffuseShader;
 	static Material material;
 	static SimpleSceneManager sceneManager = new SimpleSceneManager();
-	static Shape shape, shape2, shape3, shape4;
+	static Camera camera = sceneManager.getCamera();
+	static Shape shape;
 	static float currentstep, basicstep;
-	static int exerciseNr=2;
+	static Vector2f p1;
+	static Vector2f p2;
+	static int isIn=0;
+	static Vector3f axis = new Vector3f();
+	static float theta;
+	static int width=500;
+	static int height=500;
+	static int radius=Math.min(width,height);
+	static int exerciseNr=4;
 
 	public final static class HouseRenderPanel extends GLRenderPanel
 	{
@@ -121,13 +132,14 @@ public class simple
 
 				sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/3);
 				
-				int pictureNr = 0;
+				int pictureNr = 2;
+				/*
 				System.out.println("which picture?");
 				do{
 					pictureNr = new Scanner(System.in).nextInt();
 				}
 				while(pictureNr<1 && pictureNr>2);
-
+				 */
 				switch(pictureNr)
 				{
 					case 1:{
@@ -176,6 +188,27 @@ public class simple
 			renderContext = r;
 			this.fractalLandscape = new FractalLandscape(r);
 			this.fractal = fractalLandscape.fractal(fractalSizeN, maxHeight, length, width);
+			
+			VertexData vertexData = r.makeVertexData(0);
+			try{
+			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+			}
+			catch(IOException e1){
+				e1.printStackTrace();
+			}
+			
+			Shape airplane = new Shape(vertexData);
+			shape = airplane;
+			Matrix4f t = shape.getTransformation();
+    		t.setScale(5f);
+			Matrix4f trans = new Matrix4f();
+    		Vector3f vector = new Vector3f((float) length/2, (float) (maxHeight-5), (float) -width/8);
+    		trans.setTranslation(vector);
+    		t.add(trans);
+    		shape.setTransformation(t);
+			
+			
+			this.renderer(r, airplane);		
 			this.renderer(r,fractal);
 		}
 		
@@ -183,9 +216,38 @@ public class simple
 		{
 			renderContext = r;
 			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/2);
-			sceneManager.getCamera().setCenterOfProjection(new Vector3f((float) length/2, 0,(float) (3*maxHeight)));
-			sceneManager.getCamera().setLookAtPoint( new Vector3f((float) length/2,(float) width/2,0));
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f((float) length/2, (float) (maxHeight+5), (float) -width/4));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f((float) length/2, 0, (float) width/2));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+			
+			// Load some more shaders
+		    normalShader = renderContext.makeShader();
+		    try {
+		    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+	
+		    diffuseShader = renderContext.makeShader();
+		    try {
+		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+
+		    // Make a material that can be used for shading
+			material = new Material();
+			material.shader = diffuseShader;
+			material.diffuseMap = renderContext.makeTexture();
+			try {
+				material.diffuseMap.load("../textures/plant.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
+
 			
 			// Add the object to the scene Manager
 			sceneManager.addShape(fractalLandscape);
@@ -195,80 +257,137 @@ public class simple
 		}
 	}
 	
-	/**
-	 * A timer task that generates an animation. This task triggers
-	 * the redrawing of the 3D scene every time it is executed.
-	 */
-	public static class AnimationTask extends TimerTask
+	public static class MyMouseListener implements MouseListener
 	{
-		public void run()
-		{
+		@Override
+    	public void mousePressed(MouseEvent e) {
 			
-					// Trigger redrawing of the render window
-				renderPanel.getCanvas().repaint(); 
-		}
-	}
-
-	/**
-	 * A mouse listener for the main window of this application. This can be
-	 * used to process mouse events.
-	 */
-	public static class SimpleMouseListener implements MouseListener
-	{
-    	public void mousePressed(MouseEvent e) {}
+    		if(isIn==1)
+    		{
+	    		int x = e.getX();
+	            int y = e.getY();
+	            p1 = new Vector2f(x,y);
+    		}
+    		
+    	}
+    	@Override
     	public void mouseReleased(MouseEvent e) {}
-    	public void mouseEntered(MouseEvent e) {}
-    	public void mouseExited(MouseEvent e) {}
+    	@Override
+    	public void mouseEntered(MouseEvent e) {isIn=1;}
+    	@Override
+    	public void mouseExited(MouseEvent e) {isIn=0;}
     	public void mouseClicked(MouseEvent e) {}
 	}
 	
 	/**
-	 * A key listener for the main window. Use this to process key events.
-	 * Currently this provides the following controls:
-	 * 's': stop animation
-	 * 'p': play animation
-	 * '+': accelerate rotation
-	 * '-': slow down rotation
-	 * 'd': default shader
-	 * 'n': shader using surface normals
-	 * 'm': use a material for shading
+	 * A mouse listener for the main window of this application. This can be
+	 * used to process mouse events.
 	 */
-	public static class SimpleKeyListener implements KeyListener
+	public static class TrackballMouseMotionListener implements MouseMotionListener
+	{		
+		
+		@Override
+		public void mouseDragged(MouseEvent e) {
+
+    		
+			if(isIn==1)
+    		{
+	    		int x = e.getX();
+	            int y = e.getY();
+	            
+	            p2 = new Vector2f(x,y);
+	            
+	            
+	            Vector2f dp = new Vector2f();
+	            dp.sub(p2, p1);
+	            float thetaX = dp.x/width;
+	            float thetaY = dp.y/height; 
+	            Vector3f axisX = camera.getUpVector();
+	            Vector3f axisY = axisY();
+
+	            AxisAngle4f axisAngleX = new AxisAngle4f(axisX, (float) (-currentstep*thetaX));
+	            AxisAngle4f axisAngleY = new AxisAngle4f(axisY, (float) (-currentstep*thetaY));
+	            
+	            Matrix4f rotX = new Matrix4f();
+	            rotX.set(axisAngleX);
+	            Matrix4f rotY = new Matrix4f();
+	            rotY.set(axisAngleY);
+	            
+	            Vector3f lap = camera.getLookAtPoint();
+				rotX.transform(lap);
+				rotY.transform(lap);
+				camera.setLookAtPoint(lap);
+				
+				Matrix4f plane = shape.getTransformation();
+				plane.mul(rotX, plane);
+				plane.mul(rotY, plane);
+				shape.setTransformation(plane);
+				
+	            p1=new Vector2f(p2);
+    		}
+			
+
+			// Trigger redrawing
+			renderPanel.getCanvas().repaint();
+		}
+		@Override
+		public void mouseMoved(MouseEvent e) {}
+		
+		public Vector3f axisY()
+		{
+			Vector3f cop = camera.getCenterOfProjection();
+			Vector3f lap = camera.getLookAtPoint();
+			Vector3f uv = camera.getUpVector();
+			
+			Vector3f z = new Vector3f();
+			z.sub(cop, lap);
+			z.normalize();
+			
+			Vector3f x =  new Vector3f();
+			x.cross(uv, z);
+			x.normalize();
+			
+			return x;
+		}
+		
+	}
+	
+	
+	// Key listener for exercise 2.4
+	public static class MyKeyListener implements KeyListener
 	{
 		public void keyPressed(KeyEvent e)
 		{
 			switch(e.getKeyChar())
 			{
+				case 'w': {
+					// move forward
+					moveX(currentstep);
+					break;
+				}
 				case 's': {
-					// Stop animation
-					currentstep = 0;
+					// move backwards
+					moveX(-currentstep);
 					break;
 				}
-				case 'p': {
-					// Resume animation
-					currentstep = basicstep;
-					break;
-				}
-				case '+': {
-					// Accelerate roation
-					currentstep += basicstep;
-					break;
-				}
-				case '-': {
-					// Slow down rotation
-					currentstep -= basicstep;
-					break;
-				}
-				case 'n': {
-					// Remove material from shape, and set "normal" shader
-					shape.setMaterial(null);
-					renderContext.useShader(normalShader);
+				case 'a': {
+					// move left
+					moveY(-currentstep);
 					break;
 				}
 				case 'd': {
-					// Remove material from shape, and set "default" shader
-					shape.setMaterial(null);
-					renderContext.useDefaultShader();
+					// move right
+					moveY(currentstep);
+					break;
+				}
+				case 'e':{
+					// move up
+					moveZ(currentstep);
+					break;
+				}
+				case 'q':{
+					// move down
+					moveZ(-currentstep);
 					break;
 				}
 				case 'm': {
@@ -282,6 +401,7 @@ public class simple
 					}
 					break;
 				}
+					
 			}
 			
 			// Trigger redrawing
@@ -291,6 +411,86 @@ public class simple
 		public void keyReleased(KeyEvent e){}
 
 		public void keyTyped(KeyEvent e){}
+		
+		
+		public void moveX(float n)
+		{
+			Vector3f cop = camera.getCenterOfProjection();
+			Vector3f lap = camera.getLookAtPoint();
+			
+			Vector3f translationAxis = new Vector3f();
+			translationAxis.sub(lap, cop);
+			translationAxis.normalize();
+			translationAxis.scale((float)n);
+			
+			cop.add(translationAxis);
+			camera.setCenterOfProjection(cop);
+			lap.add(translationAxis);
+			camera.setLookAtPoint(lap);
+			
+			Matrix4f plane = shape.getTransformation();
+			Matrix4f trans = new Matrix4f();
+			trans.set(1);
+			trans.setTranslation(translationAxis);
+			plane.mul(trans, plane);
+			shape.setTransformation(plane);
+		}
+		
+		public void moveY(float n)
+		{
+			Vector3f cop = camera.getCenterOfProjection();
+			Vector3f lap = camera.getLookAtPoint();
+			Vector3f uv = camera.getUpVector();
+			
+			Vector3f z = new Vector3f();
+			z.sub(cop, lap);
+			z.normalize();
+			
+			Vector3f translationAxis =  new Vector3f();
+			translationAxis.cross(uv, z);
+			translationAxis.scale((float)n);
+			
+			cop.add(translationAxis);
+			camera.setCenterOfProjection(cop);
+			lap.add(translationAxis);
+			camera.setLookAtPoint(lap);
+			
+			Matrix4f plane = shape.getTransformation();
+			Matrix4f trans = new Matrix4f();
+			trans.set(1);
+			trans.setTranslation(translationAxis);
+			plane.mul(trans, plane);
+			shape.setTransformation(plane);
+		}
+		
+		public void moveZ(float n)
+		{
+			Vector3f cop = camera.getCenterOfProjection();
+			Vector3f lap = camera.getLookAtPoint();
+			Vector3f uv = camera.getUpVector();
+						
+			Vector3f translationAxis =  new Vector3f();
+			if(n>0)
+				translationAxis = uv;
+			else
+			{
+				uv.negate();
+				translationAxis = uv; 
+			}
+			
+			cop.add(translationAxis);
+			camera.setCenterOfProjection(cop);
+
+			lap.add(uv);
+			camera.setLookAtPoint(lap);
+			
+			Matrix4f plane = shape.getTransformation();
+			Matrix4f trans = new Matrix4f();
+			trans.set(1);
+			trans.setTranslation(translationAxis);
+			plane.mul(trans, plane);
+			shape.setTransformation(plane);
+		}
 
 	}
 	
@@ -314,25 +514,36 @@ public class simple
 		switch(exerciseNr)
 		{
 			case 1:{
+				// exercise 2.1
 				renderPanel = new HouseRenderPanel();
 				break;
 			}
 			case 2:{
+				// exercise 2.2
 				int fractalN=1;
 				renderPanel = new FractalLandscapeRenderPanel(fractalN, 1, 2, 2);
+				break;
+			}
+			case 4:{
+				// exercise 2.4
+				int fractalN=10;
+				renderPanel = new FractalLandscapeRenderPanel(fractalN, 100, 100, 100);
+
+				currentstep = 1f;
+				// Add a mouse and key listener
+			    renderPanel.getCanvas().addMouseListener(new MyMouseListener());
+			    renderPanel.getCanvas().addMouseMotionListener(new TrackballMouseMotionListener());
+			    renderPanel.getCanvas().addKeyListener(new MyKeyListener());
 				break;
 			}
 		}
 		
 		// Make the main window of this application and add the renderer to it
 		JFrame jframe = new JFrame("simple");
-		jframe.setSize(500, 500);
+		jframe.setSize(width, height);
 		jframe.setLocationRelativeTo(null); // center of screen
 		jframe.getContentPane().add(renderPanel.getCanvas());// put the canvas into a JFrame window
 
-		// Add a mouse and key listener
-	    renderPanel.getCanvas().addMouseListener(new SimpleMouseListener());
-	    renderPanel.getCanvas().addKeyListener(new SimpleKeyListener());
 		renderPanel.getCanvas().setFocusable(true);   	    	    
 	    
 	    jframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
