@@ -37,7 +37,7 @@ public class simple
 	static int height=500;
 	static int radius=Math.min(width,height);
 	static int exerciseNr=4;
-	static boolean withObj=false;
+	static boolean withObj=true;
 
 	public final static class HouseRenderPanel extends GLRenderPanel
 	{
@@ -134,13 +134,13 @@ public class simple
 				sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/3);
 				
 				int pictureNr = 2;
-				/*
+				
 				System.out.println("which picture?");
 				do{
 					pictureNr = new Scanner(System.in).nextInt();
 				}
 				while(pictureNr<1 && pictureNr>2);
-				 */
+
 				switch(pictureNr)
 				{
 					case 1:{
@@ -194,7 +194,7 @@ public class simple
 			{
 			VertexData vertexData = r.makeVertexData(0);
 				try{
-				vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+				vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\airplane.obj",1f,r);
 				}
 				catch(IOException e1){
 					e1.printStackTrace();
@@ -203,9 +203,11 @@ public class simple
 				Shape airplane = new Shape(vertexData);
 				shape = airplane;
 				Matrix4f t = shape.getTransformation();
+				AxisAngle4f axis = new AxisAngle4f(new Vector3f(0,1,0), (float) Math.PI/2);
+				t.set(axis);
 	    		t.setScale(5f);
 				Matrix4f trans = new Matrix4f();
-	    		Vector3f vector = new Vector3f((float) length/2, (float) (maxHeight-5), (float) -width/8);
+	    		Vector3f vector = new Vector3f((float) length/2, (float) (maxHeight-2), (float) -width/4+10);
 	    		trans.setTranslation(vector);
 	    		t.add(trans);
 	    		shape.setTransformation(t);
@@ -219,8 +221,8 @@ public class simple
 		{
 			renderContext = r;
 			sceneManager.getFrustum().setProjectionMatrix(1, 300, 1, (float) Math.PI/2);
-			sceneManager.getCamera().setCenterOfProjection(new Vector3f((float) length/2, (float) (maxHeight+5), (float) -width/4));
-			sceneManager.getCamera().setLookAtPoint( new Vector3f((float) length/2, 0, (float) width/2));
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f((float) length/2, (float) (maxHeight), (float) -width/4));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f((float) length/2, (float) (maxHeight), (float) width/2));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
 			
 			// Load some more shaders
@@ -311,26 +313,43 @@ public class simple
 	            AxisAngle4f axisAngleX = new AxisAngle4f(axisX, (float) (-currentstep*thetaX));
 	            AxisAngle4f axisAngleY = new AxisAngle4f(axisY, (float) (-currentstep*thetaY));
 	            
+
+	            Vector3f lap = camera.getLookAtPoint();
+	            Vector3f cop = camera.getCenterOfProjection();
+	            Vector3f diff = new Vector3f();
+	            diff.sub(lap, cop);
+	            Vector3f diff1=new Vector3f(diff);
+	            
 	            Matrix4f rotX = new Matrix4f();
 	            rotX.set(axisAngleX);
 	            Matrix4f rotY = new Matrix4f();
 	            rotY.set(axisAngleY);
 	            
-	            Vector3f lap = camera.getLookAtPoint();
-				rotX.transform(lap);
-				rotY.transform(lap);
-				camera.setLookAtPoint(lap);
+				rotX.transform(diff);
+				diff.add(cop);
+				rotY.transform(diff);
+				camera.setLookAtPoint(diff);
 				
 				if(withObj)
 				{
+					Vector3f axisPlane = new Vector3f();
+					axis.cross(diff, diff1);
+					float angle = (float) diff.angle(diff1);
+					AxisAngle4f axisAnglePlane = new AxisAngle4f(axis, angle);
+					Matrix4f t = new Matrix4f();
+					t.set(axisAnglePlane);
 					Matrix4f plane = shape.getTransformation();
+					
+					plane.mul(t, plane);;
+					
+					/*
 					Matrix4f cam = camera.getCameraMatrix();
 					//cam.invert();
 					plane.mul(cam, plane);
 					plane.mul(rotX, plane);
 					plane.mul(rotY, plane);
 					cam.invert();
-					plane.mul(cam, plane);
+					plane.mul(cam, plane);*/
 					shape.setTransformation(plane);
 				}
 				
@@ -487,27 +506,29 @@ public class simple
 			Vector3f uv = camera.getUpVector();
 						
 			Vector3f translationAxis =  new Vector3f();
+			translationAxis = uv;
+			
 			if(n>0)
-				translationAxis = uv;
+			{
+				cop.add(translationAxis);
+				lap.add(translationAxis);
+			}
 			else
 			{
-				uv.negate();
-				translationAxis = uv; 
+				cop.sub(translationAxis);
+				lap.sub(translationAxis);
 			}
-			
-			cop.add(translationAxis);
 			camera.setCenterOfProjection(cop);
-
-			lap.add(uv);
 			camera.setLookAtPoint(lap);
 			
 			if(withObj)
 			{
 				Matrix4f plane = shape.getTransformation();
 				Matrix4f trans = new Matrix4f();
-				trans.set(1);
+				trans.set(0);
+				translationAxis.negate();
 				trans.setTranslation(translationAxis);
-				plane.mul(trans, plane);
+				plane.add(trans);//, plane);
 				shape.setTransformation(plane);
 			}
 		}
@@ -524,13 +545,13 @@ public class simple
 	{		
 		// Make a render panel. The init function of the renderPanel
 		// (see above) will be called back for initialization.
-		/*
+		
 		System.out.println("Which exercise?");
 		do{
 			exerciseNr = new Scanner(System.in).nextInt();
 		}
 		while(exerciseNr<0 && exerciseNr>3);
-		 */
+		 
 		switch(exerciseNr)
 		{
 			case 1:{

@@ -1,7 +1,5 @@
 package simple;
 
-import java.util.Random;
-
 import javax.vecmath.Vector3f;
 
 import jrtr.*;
