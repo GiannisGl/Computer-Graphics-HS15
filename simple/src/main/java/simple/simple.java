@@ -37,6 +37,7 @@ public class simple
 	static int height=500;
 	static int radius=Math.min(width,height);
 	static int exerciseNr=4;
+	static boolean withObj=false;
 
 	public final static class HouseRenderPanel extends GLRenderPanel
 	{
@@ -189,33 +190,35 @@ public class simple
 			this.fractalLandscape = new FractalLandscape(r);
 			this.fractal = fractalLandscape.fractal(fractalSizeN, maxHeight, length, width);
 			
+			if(withObj)
+			{
 			VertexData vertexData = r.makeVertexData(0);
-			try{
-			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+				try{
+				vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+				}
+				catch(IOException e1){
+					e1.printStackTrace();
+				}
+				
+				Shape airplane = new Shape(vertexData);
+				shape = airplane;
+				Matrix4f t = shape.getTransformation();
+	    		t.setScale(5f);
+				Matrix4f trans = new Matrix4f();
+	    		Vector3f vector = new Vector3f((float) length/2, (float) (maxHeight-5), (float) -width/8);
+	    		trans.setTranslation(vector);
+	    		t.add(trans);
+	    		shape.setTransformation(t);
+	    		this.renderer(r, airplane);
 			}
-			catch(IOException e1){
-				e1.printStackTrace();
-			}
 			
-			Shape airplane = new Shape(vertexData);
-			shape = airplane;
-			Matrix4f t = shape.getTransformation();
-    		t.setScale(5f);
-			Matrix4f trans = new Matrix4f();
-    		Vector3f vector = new Vector3f((float) length/2, (float) (maxHeight-5), (float) -width/8);
-    		trans.setTranslation(vector);
-    		t.add(trans);
-    		shape.setTransformation(t);
-			
-			
-			this.renderer(r, airplane);		
 			this.renderer(r,fractal);
 		}
 		
 		public void renderer(RenderContext r, Shape fractalLandscape)
 		{
 			renderContext = r;
-			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/2);
+			sceneManager.getFrustum().setProjectionMatrix(1, 300, 1, (float) Math.PI/2);
 			sceneManager.getCamera().setCenterOfProjection(new Vector3f((float) length/2, (float) (maxHeight+5), (float) -width/4));
 			sceneManager.getCamera().setLookAtPoint( new Vector3f((float) length/2, 0, (float) width/2));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
@@ -318,10 +321,18 @@ public class simple
 				rotY.transform(lap);
 				camera.setLookAtPoint(lap);
 				
-				Matrix4f plane = shape.getTransformation();
-				plane.mul(rotX, plane);
-				plane.mul(rotY, plane);
-				shape.setTransformation(plane);
+				if(withObj)
+				{
+					Matrix4f plane = shape.getTransformation();
+					Matrix4f cam = camera.getCameraMatrix();
+					//cam.invert();
+					plane.mul(cam, plane);
+					plane.mul(rotX, plane);
+					plane.mul(rotY, plane);
+					cam.invert();
+					plane.mul(cam, plane);
+					shape.setTransformation(plane);
+				}
 				
 	            p1=new Vector2f(p2);
     		}
@@ -428,12 +439,15 @@ public class simple
 			lap.add(translationAxis);
 			camera.setLookAtPoint(lap);
 			
-			Matrix4f plane = shape.getTransformation();
-			Matrix4f trans = new Matrix4f();
-			trans.set(1);
-			trans.setTranslation(translationAxis);
-			plane.mul(trans, plane);
-			shape.setTransformation(plane);
+			if(withObj)
+			{
+				Matrix4f plane = shape.getTransformation();
+				Matrix4f trans = new Matrix4f();
+				trans.set(1);
+				trans.setTranslation(translationAxis);
+				plane.mul(trans, plane);
+				shape.setTransformation(plane);
+			}
 		}
 		
 		public void moveY(float n)
@@ -455,12 +469,15 @@ public class simple
 			lap.add(translationAxis);
 			camera.setLookAtPoint(lap);
 			
-			Matrix4f plane = shape.getTransformation();
-			Matrix4f trans = new Matrix4f();
-			trans.set(1);
-			trans.setTranslation(translationAxis);
-			plane.mul(trans, plane);
-			shape.setTransformation(plane);
+			if(withObj)
+			{
+				Matrix4f plane = shape.getTransformation();
+				Matrix4f trans = new Matrix4f();
+				trans.set(1);
+				trans.setTranslation(translationAxis);
+				plane.mul(trans, plane);
+				shape.setTransformation(plane);
+			}
 		}
 		
 		public void moveZ(float n)
@@ -484,12 +501,15 @@ public class simple
 			lap.add(uv);
 			camera.setLookAtPoint(lap);
 			
-			Matrix4f plane = shape.getTransformation();
-			Matrix4f trans = new Matrix4f();
-			trans.set(1);
-			trans.setTranslation(translationAxis);
-			plane.mul(trans, plane);
-			shape.setTransformation(plane);
+			if(withObj)
+			{
+				Matrix4f plane = shape.getTransformation();
+				Matrix4f trans = new Matrix4f();
+				trans.set(1);
+				trans.setTranslation(translationAxis);
+				plane.mul(trans, plane);
+				shape.setTransformation(plane);
+			}
 		}
 
 	}
@@ -520,8 +540,8 @@ public class simple
 			}
 			case 2:{
 				// exercise 2.2
-				int fractalN=1;
-				renderPanel = new FractalLandscapeRenderPanel(fractalN, 1, 2, 2);
+				int fractalN=10;
+				renderPanel = new FractalLandscapeRenderPanel(fractalN, 100, 100, 100);
 				break;
 			}
 			case 4:{

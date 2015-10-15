@@ -2,6 +2,8 @@ package simple;
 
 import java.util.Random;
 
+import javax.vecmath.Vector3f;
+
 import jrtr.*;
 
 public final class FractalLandscape
@@ -10,7 +12,9 @@ public final class FractalLandscape
 	RenderContext renderContext;
 	int sizeN;
 	int size;
-	
+	double diffLength;
+	double diffWidth;
+	double[][] heightsArray;
 	
 	public FractalLandscape(RenderContext r)
 	{
@@ -25,12 +29,12 @@ public final class FractalLandscape
 		this.size=(int) Math.pow(2, sizeN)+1;
 		int sqSize= size*size;
 		
-		double diffLength = length/(size-1);
-		double diffWidth = width/(size-1); 
+		diffLength = length/(size-1);
+		diffWidth = width/(size-1); 
 		
 		
 		// The heights array:
-		double[][] heightsArray = new double[size][size];
+		heightsArray = new double[size][size];
 		// Initialize the corners
 		heightsArray[0][0]= Math.random()*maxHeight;
 		heightsArray[0][size-1]=Math.random()*maxHeight;
@@ -55,25 +59,22 @@ public final class FractalLandscape
 		for(int i=0; i<sqSize; i++)
 		{
 			double height = heightsArray[Math.floorDiv(i, size)][Math.floorMod(i, size)];
-			float ratio = (float) (height/(maxHeight+1f));
-			c[3*i]= height<maxHeight*0.6f ? 0f:  (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
-			c[3*i+1]= height<maxHeight*0.6f ? (float) (ratio*ratio*0.2f+0.3f): (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
-			c[3*i+2]= height<maxHeight*0.6f ? 0f: (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
+			float ratio = (float) (height/(maxHeight+2f));
+			c[3*i]= ratio;//height<maxHeight*0.6f ? 0f:  (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
+			c[3*i+1]= ratio;//height<maxHeight*0.6f ? (float) (ratio*ratio*0.2f+0.3f): (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
+			c[3*i+2]= ratio;//height<maxHeight*0.6f ? 0f: (float) (2*Math.sqrt(ratio)-ratio)*0.5f+0.5f;
 		}
 		
 		
 		// The vertex normals:
 		float[] n = new float[3*sqSize];
-		/*
-		for(int i=0; i<sqSize; i++)
+		for(int x=0; x<size; x++)
 		{
-			double height = heightsArray[Math.floorMod(i, size)][Math.floorDiv(i, size)];
-			double ratio = height/maxHeight;
-			c[3*i]=(float) (2*Math.sqrt(ratio)-ratio);
-			c[3*i+1]=(float) (2*Math.sqrt(ratio)-ratio)+0.1f;
-			c[3*i+2]=(float) (2*Math.sqrt(ratio)-ratio)+0.2f;
+			for(int y=0; y<size; y++)
+			{	
+				setNormal(n, x, y);
+			}
 		}
-		*/
 				
 		// Construct a data structure that stores the vertices, their
 		// attributes, and the triangle mesh connectivity
@@ -108,6 +109,70 @@ public final class FractalLandscape
 		Shape fractal = new Shape(vertexData);  		
 		
 		return fractal;
+	}
+	
+	public final void setNormal(float[] n, int x, int y)
+	{
+
+		Vector3f w = getVector(x, y);
+		Vector3f nm = new Vector3f();
+		Vector3f n1 = new Vector3f();
+		Vector3f n2 = new Vector3f();
+		Vector3f n3 = new Vector3f();
+		Vector3f n4 = new Vector3f();
+		Vector3f v1 = new Vector3f();
+		Vector3f v2 = new Vector3f();
+		Vector3f v3 = new Vector3f();
+		Vector3f v4 = new Vector3f();
+		Vector3f v0 = new Vector3f();
+		if(y-1>=0){
+			v1=getVector(x, y-1);
+			v1.sub(v1, w);
+		}
+		if(x-1>=0){
+			v2=getVector(x-1, y);
+			v2.sub(v2, w);
+		}
+		if(y+1<size){
+			v3=getVector(x, y+1);
+			v3.sub(v3, w);
+		}
+		if(x+1<size){
+			v4=getVector(x+1, y);
+			v4.sub(v4, w);
+		}
+		
+		if(!v1.equals(v0) && !v2.equals(v0)){
+			n1.cross(v2, v1);
+			nm.add(n1);
+		}
+		if(!v2.equals(v0) && !v3.equals(v0)){
+			n2.cross(v3, v2);
+			nm.add(n2);
+		}
+		if(!v3.equals(v0) && !v4.equals(v0)){
+			n3.cross(v4, v3);
+			nm.add(n3);
+		}
+		if(!v4.equals(v0) && !v1.equals(v0)){
+			n4.cross(v1, v4);
+			nm.add(n4);
+		}
+		
+		nm.normalize();
+		
+		n[3*(x*size+y)]=nm.x;
+		n[3*(x*size+y)+1]=nm.y;
+		n[3*(x*size+y)+2]=nm.z;
+	}
+	
+	public final Vector3f getVector(int x, int y)
+	{
+		Vector3f v = new Vector3f();
+		v.x = (float) diffLength*x;
+		v.y =(float) heightsArray[x][y];
+		v.z =(float) diffWidth*y;
+		return v;
 	}
 	
 	
