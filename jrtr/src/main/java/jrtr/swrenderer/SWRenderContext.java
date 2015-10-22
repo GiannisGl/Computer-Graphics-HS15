@@ -9,7 +9,14 @@ import jrtr.Texture;
 import jrtr.VertexData;
 import jrtr.glrenderer.GLRenderPanel;
 
+import java.awt.Color;
 import java.awt.image.*;
+import java.util.ListIterator;
+
+import javax.vecmath.Matrix4f;
+import javax.vecmath.Tuple4f;
+import javax.vecmath.Vector2f;
+import javax.vecmath.Vector4f;
 
 
 /**
@@ -84,6 +91,69 @@ public class SWRenderContext implements RenderContext {
 	 */
 	private void draw(RenderItem renderItem)
 	{
+		Matrix4f objMatrix = renderItem.getT();
+		Matrix4f cam = sceneManager.getCamera().getCameraMatrix();
+		Matrix4f projMatrix = sceneManager.getFrustum().getProjectionMatrix();
+		Matrix4f viewportMatrix = new Matrix4f();
+		int startX = colorBuffer.getMinTileX();
+		int startY = colorBuffer.getMinTileY();
+		int height = colorBuffer.getHeight();
+		int width = colorBuffer.getWidth();
+		viewportMatrix.setRow(0, width/2, 0, 0, (2*startX+width)/2);
+		viewportMatrix.setRow(1, 0, -height/2, 0, (2*startY+height)/2);
+		viewportMatrix.setRow(2, 0, 0, 0.5f, 0.5f);
+		viewportMatrix.setRow(3, 0, 0, 0, 1);
+		
+		VertexData vertexData = renderItem.getShape().getVertexData();
+		ListIterator<VertexData.VertexElement> itr = vertexData.getElements()
+				.listIterator(0);
+		int nrVertices = vertexData.getNumberOfVertices();
+		
+		float[] vertices = new float[3*nrVertices];
+		float[] colors = new float[3*nrVertices];
+		float[] normals = new float[3*nrVertices];
+		float[] textcoord = new float[2*nrVertices];
+		
+		while(itr.hasNext())
+		{
+			VertexData.VertexElement e = itr.next();
+			switch(e.getSemantic())
+			{
+				case  POSITION:
+				{
+					vertices = e.getData();
+					break;
+				}
+				case COLOR:
+				{
+					colors = e.getData();
+					break;
+				}
+				case NORMAL:
+				{
+					normals = e.getData();
+					break;
+				}
+				case TEXCOORD:
+				{
+					textcoord = e.getData();
+					break;
+				}
+			}
+		}
+		
+		for(int i=0; i<nrVertices; i++)
+		{
+			Vector4f vertex = new Vector4f(vertices[3*i],vertices[3*i+1],vertices[3*i+2],1f);
+			objMatrix.transform(vertex);
+			cam.transform(vertex);
+			projMatrix.transform(vertex);
+			viewportMatrix.transform(vertex);
+			
+			Vector2f imageVertex = new Vector2f(vertex.x/vertex.w, vertex.y/vertex.w);
+			colorBuffer.setRGB((int) imageVertex.x, (int) imageVertex.y, (int) (Math.pow(2, 24)-1));
+			
+		}
 	}
 	
 	/**

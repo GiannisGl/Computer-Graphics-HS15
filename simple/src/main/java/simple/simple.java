@@ -5,8 +5,6 @@ import jrtr.glrenderer.*;
 
 import javax.swing.*;
 import java.awt.event.*;
-import java.io.IOException;
-
 import javax.vecmath.*;
 
 import java.util.Scanner;
@@ -25,21 +23,355 @@ public class simple
 	static Shader diffuseShader;
 	static Material material;
 	static SimpleSceneManager sceneManager = new SimpleSceneManager();
-	static Camera camera = sceneManager.getCamera();
-	static Shape shape;
+	static Shape shape, shape2, shape3, shape4;
 	static float currentstep, basicstep;
-	static Vector2f p1;
-	static Vector2f p2;
-	static int isIn=0;
-	static Vector3f axis = new Vector3f();
-	static float theta;
-	static int width=500;
-	static int height=500;
-	static int radius=Math.min(width,height);
-	static int exerciseNr=4;
-	static boolean withObj=true;
+	static int exerciseNr=5;
 
-	public final static class HouseRenderPanel extends GLRenderPanel
+	 /* An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
+	 * provide a call-back function for initialization. Here we construct
+	 * a simple 3D scene and start a timer task to generate an animation.
+	 */ 
+	public final static class SimpleRenderPanel extends GLRenderPanel
+	{
+		/**
+		 * Initialization call-back. We initialize our renderer here.
+		 * 
+		 * @param r	the render context that is associated with this render panel
+		 */
+		public void init(RenderContext r)
+		{
+			renderContext = r;
+			this.renderer(r, cube());			
+		}
+			
+			// Make a simple geometric object: a cube
+			public final static Shape cube()
+			{	
+				// The vertex positions of the cube
+				float v[] = {-1,-1,1, 1,-1,1, 1,1,1, -1,1,1,		// front face
+					         -1,-1,-1, -1,-1,1, -1,1,1, -1,1,-1,	// left face
+						  	 1,-1,-1,-1,-1,-1, -1,1,-1, 1,1,-1,		// back face
+							 1,-1,1, 1,-1,-1, 1,1,-1, 1,1,1,		// right face
+							 1,1,1, 1,1,-1, -1,1,-1, -1,1,1,		// top face
+							-1,-1,1, -1,-1,-1, 1,-1,-1, 1,-1,1};	// bottom face
+	
+				// The vertex normals 
+				float n[] = {0,0,1, 0,0,1, 0,0,1, 0,0,1,			// front face
+					         -1,0,0, -1,0,0, -1,0,0, -1,0,0,		// left face
+						  	 0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1,		// back face
+							 1,0,0, 1,0,0, 1,0,0, 1,0,0,			// right face
+							 0,1,0, 0,1,0, 0,1,0, 0,1,0,			// top face
+							 0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0};		// bottom face
+	
+				// The vertex colors
+				float c[] = {1,0,0, 1,0,0, 1,0,0, 1,0,0,
+						     0,1,0, 0,1,0, 0,1,0, 0,1,0,
+							 1,0,0, 1,0,0, 1,0,0, 1,0,0,
+							 0,1,0, 0,1,0, 0,1,0, 0,1,0,
+							 0,0,1, 0,0,1, 0,0,1, 0,0,1,
+							 0,0,1, 0,0,1, 0,0,1, 0,0,1};
+	
+				// Texture coordinates 
+				float uv[] = {0,0, 1,0, 1,1, 0,1,
+						  0,0, 1,0, 1,1, 0,1,
+						  0,0, 1,0, 1,1, 0,1,
+						  0,0, 1,0, 1,1, 0,1,
+						  0,0, 1,0, 1,1, 0,1,
+						  0,0, 1,0, 1,1, 0,1};
+	
+				// Construct a data structure that stores the vertices, their
+				// attributes, and the triangle mesh connectivity
+				VertexData vertexData = renderContext.makeVertexData(24);
+				vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
+				vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+				vertexData.addElement(n, VertexData.Semantic.NORMAL, 3);
+				vertexData.addElement(uv, VertexData.Semantic.TEXCOORD, 2);
+				
+				// The triangles (three vertex indices for each triangle)
+				int indices[] = {0,2,3, 0,1,2,			// front face
+								 4,6,7, 4,5,6,			// left face
+								 8,10,11, 8,9,10,		// back face
+								 12,14,15, 12,13,14,	// right face
+								 16,18,19, 16,17,18,	// top face
+								 20,22,23, 20,21,22};	// bottom face
+	
+				vertexData.addIndices(indices);
+												
+				// Add the object to the scene Manager
+				Shape cube = new Shape(vertexData);  		
+	    		
+				return cube;
+			}
+			
+			public void renderer(RenderContext r, Shape cube)
+			{
+				shape = cube;
+				sceneManager.addShape(cube);
+				
+				// Add the scene to the renderer
+				renderContext.setSceneManager(sceneManager);
+				
+				// Load some more shaders
+			    normalShader = renderContext.makeShader();
+			    try {
+			    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+		
+			    diffuseShader = renderContext.makeShader();
+			    try {
+			    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+	
+			    // Make a material that can be used for shading
+				material = new Material();
+				material.shader = diffuseShader;
+				material.diffuseMap = renderContext.makeTexture();
+				try {
+					material.diffuseMap.load("../textures/plant.jpg");
+				} catch(Exception e) {				
+					System.out.print("Could not load texture.\n");
+					System.out.print(e.getMessage());
+				}
+	
+				// Register a timer task
+			    Timer timer = new Timer();
+			    basicstep = 0.01f;
+			    currentstep = basicstep;
+			    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
+			}
+	}
+		
+		public final static class CylinderRenderPanel extends GLRenderPanel
+		{
+			/**
+			 * Initialization call-back. We initialize our renderer here.
+			 * 
+			 * @param r	the render context that is associated with this render panel
+			 */
+			public final  void init(RenderContext r)
+			{
+				renderContext = r;
+				int segments = 23;
+				this.renderer(r,cylinder(segments));
+			}
+			
+		
+			public static final Shape cylinder(int segments)
+			{			
+				
+				// Make a simple geometric object: a cylinder
+				
+				// The vertex positions of the cylinder:
+				float[] v = new float[2*3*segments+2*3];
+				// The vertex positions of the round faces
+				for(int i=0; i<segments; i++)
+				{
+					v[6*i]=(float) Math.cos(2*Math.PI*i/segments);
+					v[6*i+1]=-1;
+					v[6*i+2]=(float) Math.sin(2*Math.PI*i/segments);
+					
+					v[6*i+3]=(float) Math.cos(2*Math.PI*i/segments);
+					v[6*i+3+1]=1;
+					v[6*i+3+2]=(float) Math.sin(2*Math.PI*i/segments);
+				}
+				
+				// Center of the bottom face
+				v[6*segments]= 0;
+				v[6*segments+1]=-1;
+				v[6*segments+2]=0;
+							
+				// Center of the top face
+				v[6*segments+3]=0;
+				v[6*segments+3+1]=1;
+				v[6*segments+3+2]=0;
+				
+				
+				// The vertex colors
+				// The vertex colors of the round faces
+				float[] c = new float[2*3*segments+2*3];
+				for(int i=0; i<segments; i++)
+				{
+					c[6*i]=(float) Math.floorMod(i, 2);
+					c[6*i+1]=(float) Math.floorMod(i, 2);
+					c[6*i+2]= (float)Math.floorMod(i, 2);
+					c[6*i+3]=(float) Math.floorMod(i, 2);
+					c[6*i+4]=(float) Math.floorMod(i, 2);
+					c[6*i+5]=(float) Math.floorMod(i, 2);				
+				}
+				
+				// The vertex colors of the top vertex
+				c[6*segments]= 0;
+				c[6*segments+1]=0;
+				c[6*segments+2]=0;
+							
+				// The vertex colors of the bottom vertex 
+				c[6*segments+3]=0;
+				c[6*segments+3+1]=0;
+				c[6*segments+3+2]=0;
+				
+				
+				
+				VertexData vertexData = renderContext.makeVertexData(2*segments+2);
+				vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
+				vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+				
+				// The triangles (three vertex indices for each triangle)
+				int[] indices = new int[4*3*segments];
+				// The triangles of the round faces
+				for(int i=0; i<segments; i++)
+				{
+					indices[6*i]=Math.floorMod(2*i, 2*segments);
+					indices[6*i+1]=Math.floorMod(2*i+3, 2*segments);
+					indices[6*i+2]=Math.floorMod(2*i+1, 2*segments);
+					
+					indices[6*i+3]=Math.floorMod(2*i, 2*segments);
+					indices[6*i+4]=Math.floorMod(2*i+2, 2*segments);
+					indices[6*i+5]=Math.floorMod(2*i+3, 2*segments);
+				}
+				
+				// The triangles of the bottom face
+				for(int i=0; i<segments; i++)
+				{
+					indices[6*segments+3*i]=Math.floorMod(2*i, 2*segments);
+					indices[6*segments+3*i+1]=2*segments;
+					indices[6*segments+3*i+2]=Math.floorMod(2*(i+1), 2*segments);
+				}
+				
+				// The triangles of the top face
+				for(int i=0; i<segments; i++)
+				{
+					indices[9*segments+3*i]=Math.floorMod(2*(i+1)+1, 2*segments);
+					indices[9*segments+3*i+1]=2*segments+1;
+					indices[9*segments+3*i+2]=Math.floorMod(2*i+1, 2*segments);
+				}
+				
+				vertexData.addIndices(indices);
+				Shape cylinder = new Shape(vertexData);
+				
+				return cylinder;
+			}
+			
+			public void renderer(RenderContext r, Shape cylinder)
+			{
+				renderContext = r;
+				
+				shape = cylinder;
+				// Add the object to the scene Manager
+				sceneManager.addShape(cylinder);
+
+				// Add the scene to the renderer
+				renderContext.setSceneManager(sceneManager);
+								
+				// Register a timer task
+			    Timer timer = new Timer();
+			    basicstep = 0.01f;
+			    currentstep = basicstep;
+			    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
+			}
+		
+		}
+		
+		public final static class TorusRenderPanel extends GLRenderPanel
+		{
+			/**
+			 * Initialization call-back. We initialize our renderer here.
+			 * 
+			 * @param r	the render context that is associated with this render panel
+			 */
+			public final  void init(RenderContext r)
+			{
+				renderContext = r;
+				int segments = 5000;
+				int hSegments = 5000;
+				int centralRadius = 3;
+				float radius = 1f;
+				this.renderer(r, torus(segments, hSegments, centralRadius, radius));
+			}
+			
+		
+			public static final Shape torus(int segments, int hSegments, int centralRadius, float radius)
+			{			
+				
+				// Make a simple geometric object: a torus
+				
+				// The vertex positions of the cylinder:
+				float[] v = new float[hSegments*3*segments];
+				for(int i=0; i<segments; i++)
+				{
+					for(int j=0; j<hSegments; j++)
+					{
+						v[hSegments*3*i+3*j] = (float) ((radius*Math.cos(2*Math.PI*j/hSegments)+centralRadius)*Math.cos(2*Math.PI*i/segments));
+						v[hSegments*3*i+3*j+1] = (float) (radius*Math.sin(2*Math.PI*j/hSegments));
+						v[hSegments*3*i+3*j+2] = (float) ((radius*Math.cos(2*Math.PI*j/hSegments)+centralRadius)*Math.sin(2*Math.PI*i/segments));
+					}
+				}
+				
+				// The vertex colors
+				float[] c = new float[hSegments*3*segments];
+				for(int i=0; i<segments; i++)
+				{
+					for(int j=0; j<hSegments; j++)
+					{
+						c[hSegments*3*i+3*j]=(float) Math.floorMod(i, 2);
+						c[hSegments*3*i+3*j+1]=(float) Math.floorMod(i, 2);
+						c[hSegments*3*i+3*j+2]=(float) Math.floorMod(i, 2);
+					}
+				}
+								
+				
+				VertexData vertexData = renderContext.makeVertexData(hSegments*segments);
+				vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
+				vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+				
+				// The triangles (three vertex indices for each triangle)
+				int[] indices = new int[2*hSegments*3*segments];
+				for(int i=0; i<segments; i++)
+				{
+					for(int j=0; j<hSegments; j++)
+					{
+						indices[2*hSegments*3*i+6*j]=Math.floorMod(hSegments*Math.floorMod(i, segments)+Math.floorMod(j,hSegments),hSegments*segments);
+						indices[2*hSegments*3*i+6*j+1]=Math.floorMod(hSegments*Math.floorMod(i+1, segments)+Math.floorMod(j,hSegments),hSegments*segments);
+						indices[2*hSegments*3*i+6*j+2]=Math.floorMod(hSegments*Math.floorMod(i+1, segments)+Math.floorMod(j+1,hSegments),hSegments*segments);
+						
+						indices[2*hSegments*3*i+6*j+3]=Math.floorMod(hSegments*Math.floorMod(i, segments)+Math.floorMod(j,hSegments),hSegments*segments);
+						indices[2*hSegments*3*i+6*j+4]=Math.floorMod(hSegments*Math.floorMod(i+1, segments)+Math.floorMod(j+1,hSegments),hSegments*segments);
+						indices[2*hSegments*3*i+6*j+5]=Math.floorMod(hSegments*Math.floorMod(i, segments)+Math.floorMod(j+1,hSegments),hSegments*segments);
+					}
+				}
+				
+				vertexData.addIndices(indices);
+				
+				Shape torus = new Shape(vertexData);
+				return torus;
+			}
+			
+			public void renderer(RenderContext r, Shape torus)
+			{
+				renderContext = r;
+
+				shape = torus;
+				// Add the object to the scene Manager
+				sceneManager.addShape(torus);
+						
+				// Add the scene to the renderer
+				renderContext.setSceneManager(sceneManager);
+						
+				// Register a timer task
+			    Timer timer = new Timer();
+			    basicstep = 0.01f;
+			    currentstep = basicstep;
+			    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
+			}
+		
+		}
+		
+	public final static class SceneRenderPanel extends GLRenderPanel
 	{
 		/**
 		 * Initialization call-back. We initialize our renderer here.
@@ -49,386 +381,210 @@ public class simple
 		public final void init(RenderContext r)
 		{
 			renderContext = r;
-			this.renderer(r,makeHouse());
-		}
-	
-			public static final Shape makeHouse()
-			{
-				// A house
-				float vertices[] = {-4,-4,4, 4,-4,4, 4,4,4, -4,4,4,		// front face
-									-4,-4,-4, -4,-4,4, -4,4,4, -4,4,-4, // left face
-									4,-4,-4,-4,-4,-4, -4,4,-4, 4,4,-4,  // back face
-									4,-4,4, 4,-4,-4, 4,4,-4, 4,4,4,		// right face
-									4,4,4, 4,4,-4, -4,4,-4, -4,4,4,		// top face
-									-4,-4,4, -4,-4,-4, 4,-4,-4, 4,-4,4, // bottom face
+			// shape1, inner torus
+			shape = TorusRenderPanel.torus(10 , 10, 2, 1);
+    		Matrix4f t = shape.getTransformation();
+    		t.setScale(0.5f);
+			Matrix4f trans = new Matrix4f();
+    		Vector3f vector = new Vector3f(3f, 0f, 0f);
+    		trans.setTranslation(vector);
+    		t.add(trans);
+    		shape.setTransformation(t);
+    				
+    		// shape2, outer torus
+			shape2 = TorusRenderPanel.torus(10, 10, 2, 1);
+    		Matrix4f t2 = shape2.getTransformation();
+    		t2.setScale(0.5f);
+			Matrix4f trans2 = new Matrix4f();
+    		Vector3f vector2 = new Vector3f(7f, 0f, 0f);
+    		trans2.setTranslation(vector2);
+    		t2.add(trans2);
+    		shape2.setTransformation(t2);
 			
-									-20,-4,20, 20,-4,20, 20,-4,-20, -20,-4,-20, // ground floor
-									-4,4,4, 4,4,4, 0,8,4,				// the roof
-									4,4,4, 4,4,-4, 0,8,-4, 0,8,4,
-									-4,4,4, 0,8,4, 0,8,-4, -4,4,-4,
-									4,4,-4, -4,4,-4, 0,8,-4};
-			
-				float normals[] = {0,0,1,  0,0,1,  0,0,1,  0,0,1,		// front face
-								   -1,0,0, -1,0,0, -1,0,0, -1,0,0,		// left face
-								   0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1,		// back face
-								   1,0,0,  1,0,0,  1,0,0,  1,0,0,		// right face
-								   0,1,0,  0,1,0,  0,1,0,  0,1,0,		// top face
-								   0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0,		// bottom face
-			
-								   0,1,0,  0,1,0,  0,1,0,  0,1,0,		// ground floor
-								   0,0,1,  0,0,1,  0,0,1,				// front roof
-								   0.707f,0.707f,0, 0.707f,0.707f,0, 0.707f,0.707f,0, 0.707f,0.707f,0, // right roof
-								   -0.707f,0.707f,0, -0.707f,0.707f,0, -0.707f,0.707f,0, -0.707f,0.707f,0, // left roof
-								   0,0,-1, 0,0,-1, 0,0,-1};				// back roof
-								   
-				float colors[] = {1,0,0, 1,0,0, 1,0,0, 1,0,0,
-								  0,1,0, 0,1,0, 0,1,0, 0,1,0,
-								  1,0,0, 1,0,0, 1,0,0, 1,0,0,
-								  0,1,0, 0,1,0, 0,1,0, 0,1,0,
-								  0,0,1, 0,0,1, 0,0,1, 0,0,1,
-								  0,0,1, 0,0,1, 0,0,1, 0,0,1,
-				
-								  0,0.5f,0, 0,0.5f,0, 0,0.5f,0, 0,0.5f,0,			// ground floor
-								  0,0,1, 0,0,1, 0,0,1,							// roof
-								  1,0,0, 1,0,0, 1,0,0, 1,0,0,
-								  0,1,0, 0,1,0, 0,1,0, 0,1,0,
-								  0,0,1, 0,0,1, 0,0,1,};
-			
-				// Set up the vertex data
-				VertexData vertexData = renderContext.makeVertexData(42);;
-			
-				// Specify the elements of the vertex data:
-				// - one element for vertex positions
-				vertexData.addElement(vertices, VertexData.Semantic.POSITION, 3);
-				// - one element for vertex colors
-				vertexData.addElement(colors, VertexData.Semantic.COLOR, 3);
-				// - one element for vertex normals
-				vertexData.addElement(normals, VertexData.Semantic.NORMAL, 3);
-				
-				// The index data that stores the connectivity of the triangles
-				int indices[] = {0,2,3, 0,1,2,			// front face
-								 4,6,7, 4,5,6,			// left face
-								 8,10,11, 8,9,10,		// back face
-								 12,14,15, 12,13,14,	// right face
-								 16,18,19, 16,17,18,	// top face
-								 20,22,23, 20,21,22,	// bottom face
-				                 
-								 24,26,27, 24,25,26,	// ground floor
-								 28,29,30,				// roof
-								 31,33,34, 31,32,33,
-								 35,37,38, 35,36,37,
-								 39,40,41};	
-			
-				vertexData.addIndices(indices);
-			
-				Shape house = new Shape(vertexData);
-				
-				return house;
-			}
-			
-			public void renderer(RenderContext r, Shape house)
-			{
-				shape = house;
-				sceneManager.addShape(house);
+			// shape3, middle cylinder
+			shape3 = CylinderRenderPanel.cylinder(10);
+    		Matrix4f t3 = shape3.getTransformation();
+    		Matrix4f rotX = new Matrix4f();
+    		rotX.rotX((float) Math.PI/2);
+    		rotX.mul(t3);
+			Matrix4f trans3 = new Matrix4f();
+    		Vector3f vector3 = new Vector3f(5f, -0.5f, 0f);
+    		trans3.setTranslation(vector3);
+    		rotX.add(trans3);
+    		shape3.setTransformation(rotX);
+    		
+    		// shape4, bottom square
+			shape4 = SimpleRenderPanel.cube();
+    		Matrix4f t4 = shape4.getTransformation();
+			Matrix4f trans4 = new Matrix4f();
+    		Vector3f vector4 = new Vector3f(5f, -2.5f, 0f);
+    		trans4.setTranslation(vector4);
+    		t4.add(trans4);
+    		shape4.setTransformation(t4);
+    		
 
-				sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/3);
-				
-				int pictureNr = 2;
-				
-				System.out.println("which picture?");
-				do{
-					pictureNr = new Scanner(System.in).nextInt();
-				}
-				while(pictureNr<1 && pictureNr>2);
-
-				switch(pictureNr)
-				{
-					case 1:{
-						sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,0f,40f));
-						sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
-						sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
-						break;
-					}
-					case 2:{
-						sceneManager.getCamera().setCenterOfProjection(new Vector3f(-10f,40f,40f));
-						sceneManager.getCamera().setLookAtPoint( new Vector3f(-5f,0f,0f));
-						sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
-						break;
-					}
-				}
-				
-				
-				
-				// Add the scene to the renderer
-				renderContext.setSceneManager(sceneManager);
-						
-			}
-	}
-	
-	public static final class FractalLandscapeRenderPanel extends GLRenderPanel
-	{
-		
-		int fractalSizeN;
-		double maxHeight;
-		double length;
-		double width;
-		FractalLandscape fractalLandscape;
-		Shape fractal;
-		
-		
-		public FractalLandscapeRenderPanel(int fractalSizeN, double maxHeight, double length, double width)
-		{
-			this.fractalSizeN=fractalSizeN;
-			this.maxHeight=maxHeight;
-			this.length=length;
-			this.width=width;
+			Shape[] shapes = {shape, shape2, shape3, shape4};
+			renderer(r, shapes);
 		}
 		
-		public final void init(RenderContext r)
+		public void renderer(RenderContext r, Shape[] shapes)
 		{
-			renderContext = r;
-			this.fractalLandscape = new FractalLandscape(r);
-			this.fractal = fractalLandscape.fractal(fractalSizeN, maxHeight, length, width);
-			//shape = fractal;
-			
-			if(withObj)
+			for(Shape shape: shapes)
 			{
-			VertexData vertexData = r.makeVertexData(0);
-				try{
-				vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\airplane.obj",1f,r);
-				}
-				catch(IOException e1){
-					e1.printStackTrace();
-				}
-				
-				Shape airplane = new Shape(vertexData);
-				shape = airplane;
-				Matrix4f t = shape.getTransformation();
-				AxisAngle4f axis = new AxisAngle4f(new Vector3f(0,1,0), (float) Math.PI/2);
-				t.set(axis);
-	    		t.setScale(5f);
-				Matrix4f trans = new Matrix4f();
-	    		Vector3f vector = new Vector3f((float) length/2, (float) (maxHeight*0.75f-2), (float) -width/4+10);
-	    		trans.setTranslation(vector);
-	    		t.add(trans);
-	    		shape.setTransformation(t);
-	    		this.renderer(r, airplane);
+				sceneManager.addShape(shape);
 			}
-			
-			this.renderer(r,fractal);
-		}
-		
-		public void renderer(RenderContext r, Shape fractalLandscape)
-		{
-			renderContext = r;
-			sceneManager.getFrustum().setProjectionMatrix(1, 500, 1, (float) Math.PI/2);
-			sceneManager.getCamera().setCenterOfProjection(new Vector3f((float) length/2, (float) (maxHeight*0.75f), (float) -width/4));
-			sceneManager.getCamera().setLookAtPoint( new Vector3f((float) length/2, (float) (maxHeight*0.75f), (float) width/2));
-			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
-			
-			// Load some more shaders
-		    normalShader = renderContext.makeShader();
-		    try {
-		    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
-		    } catch(Exception e) {
-		    	System.out.print("Problem with shader:\n");
-		    	System.out.print(e.getMessage());
-		    }
 	
-		    diffuseShader = renderContext.makeShader();
-		    try {
-		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
-		    } catch(Exception e) {
-		    	System.out.print("Problem with shader:\n");
-		    	System.out.print(e.getMessage());
-		    }
-
-		    // Make a material that can be used for shading
-			material = new Material();
-			material.shader = diffuseShader;
-			material.diffuseMap = renderContext.makeTexture();
-			try {
-				material.diffuseMap.load("../textures/plant.jpg");
-			} catch(Exception e) {				
-				System.out.print("Could not load texture.\n");
-				System.out.print(e.getMessage());
-			}
-
-			
-			// Add the object to the scene Manager
-			sceneManager.addShape(fractalLandscape);
-					
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
+					
+			// Register a timer task
+		    Timer timer = new Timer();
+		    basicstep = 0.01f;
+		    currentstep = basicstep;
+		    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
 		}
 	}
 	
-	public static class MyMouseListener implements MouseListener
+
+	/**
+	 * A timer task that generates an animation. This task triggers
+	 * the redrawing of the 3D scene every time it is executed.
+	 */
+	public static class AnimationTask extends TimerTask
 	{
-		@Override
-    	public void mousePressed(MouseEvent e) {
+		public void run()
+		{
 			
-    		if(isIn==1)
-    		{
-	    		int x = e.getX();
-	            int y = e.getY();
-	            p1 = new Vector2f(x,y);
-    		}
-    		
-    	}
-    	@Override
-    	public void mouseReleased(MouseEvent e) {}
-    	@Override
-    	public void mouseEntered(MouseEvent e) {isIn=1;}
-    	@Override
-    	public void mouseExited(MouseEvent e) {isIn=0;}
-    	public void mouseClicked(MouseEvent e) {}
+			if((exerciseNr>=0 && exerciseNr <=2))
+			{
+				// Update transformation by rotating with angle "currentstep"
+	    		Matrix4f t = shape.getTransformation();
+	    		Matrix4f rotX = new Matrix4f();
+	    		rotX.rotX(currentstep);
+	    		Matrix4f rotY = new Matrix4f();
+	    		rotY.rotY(currentstep);
+	    		t.mul(rotX);
+	    		t.mul(rotY);	
+	    		shape.setTransformation(t);
+			}
+			else{
+				// Update transformations
+				
+				Matrix4f rotY0 = new Matrix4f();	
+				rotY0.setRow(0, (float) Math.cos(Math.PI/180*100*currentstep) , 0, (float) Math.sin(Math.PI/180*100*currentstep), 0);
+				rotY0.setRow(1, 0, 1, 0, 0);
+				rotY0.setRow(2, (float) -Math.sin(Math.PI/180*100*currentstep) , 0, (float) Math.cos(Math.PI/180*100*currentstep), 0);
+				rotY0.setRow(3, 0 , 0, 0, 1); 
+				
+				// shape1, inner torus
+				Matrix4f t = shape.getTransformation();
+				Matrix4f rotY01 = (Matrix4f) rotY0.clone();   
+				rotY01.mul(t);
+				
+				Matrix4f rotY = new Matrix4f();
+				rotY.rotY((float)-Math.PI/180*100*5*currentstep);
+				rotY01.mul(rotY);
+
+	    		Matrix4f rotX = new Matrix4f();
+	    		rotX.rotX(currentstep);
+	    		rotY01.mul(rotX);
+				shape.setTransformation(rotY01);
+				
+				// shape2, outer torus
+				Matrix4f t2 = shape2.getTransformation();
+				Matrix4f rotY2 = new Matrix4f();
+				rotY2.rotY((float)Math.PI/180*100*5*currentstep);
+				
+				Matrix4f rotY02 = (Matrix4f) rotY0.clone();
+				rotY02.mul(t2);
+				rotY02.mul(rotY2);
+	    		rotY02.mul(rotX);
+				shape2.setTransformation(rotY02);
+				
+				// shape3, middle cylinder
+				Matrix4f t3 = shape3.getTransformation();
+				Matrix4f rotZ = new Matrix4f();
+				rotZ.rotY((float) -Math.PI/180*100*5*currentstep);
+				t3.mul(rotZ);
+				Matrix4f rotY03 = (Matrix4f) rotY0.clone();   
+				rotY03.mul(t3);
+				shape3.setTransformation(rotY03);
+				
+				// shape4, bottom cube
+				Matrix4f t4 = shape4.getTransformation();
+				Matrix4f rotX2 = new Matrix4f();
+				rotX2.rotX((float)-Math.PI/180*100*5*currentstep);
+				t4.mul(rotX2);
+				Matrix4f rotY04 = (Matrix4f) rotY0.clone();
+				rotY04.mul(t4);
+				shape4.setTransformation(rotY04);
+			}
+				
+				// Trigger redrawing of the render window
+				renderPanel.getCanvas().repaint(); 
+		}
 	}
-	
+
 	/**
 	 * A mouse listener for the main window of this application. This can be
 	 * used to process mouse events.
 	 */
-	public static class TrackballMouseMotionListener implements MouseMotionListener
-	{		
-		
-		@Override
-		public void mouseDragged(MouseEvent e) {
-
-    		
-			if(isIn==1)
-    		{
-
-				Matrix4f cam = new Matrix4f(camera.getCameraMatrix());
-				//cam.invert();
-				
-	    		int x = e.getX();
-	            int y = e.getY();
-	            
-	            p2 = new Vector2f(x,y);
-	            
-	            
-	            Vector2f dp = new Vector2f();
-	            dp.sub(p2, p1);
-	            float thetaX = dp.x/width;
-	            float thetaY = dp.y/height; 
-	            Vector3f axisX = camera.getUpVector();
-	            Vector3f axisY = axisY();
-
-	            AxisAngle4f axisAngleX = new AxisAngle4f(axisX, (float) (-currentstep*thetaX));
-	            AxisAngle4f axisAngleY = new AxisAngle4f(axisY, (float) (-currentstep*thetaY));
-	            
-	           
-	            Vector3f lap = camera.getLookAtPoint();
-	            Vector3f cop = camera.getCenterOfProjection();
-	            Vector3f uv = camera.getUpVector();
-	            Vector3f diff = new Vector3f();
-	            diff.sub(lap, cop);
-	            //Vector3f diff1=new Vector3f(diff);
-	            
-	            
-	            Matrix4f rotX = new Matrix4f();
-	            rotX.set(axisAngleX);
-	            Matrix4f rotY = new Matrix4f();
-	            rotY.set(axisAngleY);
-	            
-				rotX.transform(diff);
-				rotY.transform(diff);
-				diff.add(cop);
-				camera.setLookAtPoint(diff);
-				
-				rotY.transform(uv);
-				camera.setUpVector(uv);
-				
-	            
-				if(withObj)
-				{
-					/*
-					Vector3f axisPlane = axisX;
-					axisPlane.cross(diff, diff1);
-					float angle = (float) diff.angle(diff1);
-					AxisAngle4f axisAnglePlane = new AxisAngle4f(axisPlane, angle);
-					Matrix4f t = new Matrix4f();
-					t.set(axisAnglePlane);
-					*/
-					Matrix4f plane = shape.getTransformation();
-					
-					//plane.mul(t, plane);;
-					
-					plane.mul(cam, plane);
-					rotY.invert();
-					plane.mul(rotY, plane);
-					plane.mul(rotX, plane);
-					cam.invert();
-					plane.mul(cam, plane);
-					shape.setTransformation(plane);
-				}
-				
-	            p1=new Vector2f(p2);
-    		}
-			
-
-			// Trigger redrawing
-			renderPanel.getCanvas().repaint();
-		}
-		@Override
-		public void mouseMoved(MouseEvent e) {}
-		
-		public Vector3f axisY()
-		{
-			Vector3f cop = camera.getCenterOfProjection();
-			Vector3f lap = camera.getLookAtPoint();
-			Vector3f uv = camera.getUpVector();
-			
-			Vector3f z = new Vector3f();
-			z.sub(cop, lap);
-			z.normalize();
-			
-			Vector3f x =  new Vector3f();
-			x.cross(uv, z);
-			x.normalize();
-			
-			return x;
-		}
-		
+	public static class SimpleMouseListener implements MouseListener
+	{
+    	public void mousePressed(MouseEvent e) {}
+    	public void mouseReleased(MouseEvent e) {}
+    	public void mouseEntered(MouseEvent e) {}
+    	public void mouseExited(MouseEvent e) {}
+    	public void mouseClicked(MouseEvent e) {}
 	}
 	
-	
-	// Key listener for exercise 2.4
-	public static class MyKeyListener implements KeyListener
+	/**
+	 * A key listener for the main window. Use this to process key events.
+	 * Currently this provides the following controls:
+	 * 's': stop animation
+	 * 'p': play animation
+	 * '+': accelerate rotation
+	 * '-': slow down rotation
+	 * 'd': default shader
+	 * 'n': shader using surface normals
+	 * 'm': use a material for shading
+	 */
+	public static class SimpleKeyListener implements KeyListener
 	{
 		public void keyPressed(KeyEvent e)
 		{
 			switch(e.getKeyChar())
 			{
-				case 'w': {
-					// move forward
-					moveX(currentstep);
-					break;
-				}
 				case 's': {
-					// move backwards
-					moveX(-currentstep);
+					// Stop animation
+					currentstep = 0;
 					break;
 				}
-				case 'a': {
-					// move left
-					moveY(-currentstep);
+				case 'p': {
+					// Resume animation
+					currentstep = basicstep;
+					break;
+				}
+				case '+': {
+					// Accelerate roation
+					currentstep += basicstep;
+					break;
+				}
+				case '-': {
+					// Slow down rotation
+					currentstep -= basicstep;
+					break;
+				}
+				case 'n': {
+					// Remove material from shape, and set "normal" shader
+					shape.setMaterial(null);
+					renderContext.useShader(normalShader);
 					break;
 				}
 				case 'd': {
-					// move right
-					moveY(currentstep);
-					break;
-				}
-				case 'e':{
-					// move up
-					moveZ(currentstep);
-					break;
-				}
-				case 'q':{
-					// move down
-					moveZ(-currentstep);
+					// Remove material from shape, and set "default" shader
+					shape.setMaterial(null);
+					renderContext.useDefaultShader();
 					break;
 				}
 				case 'm': {
@@ -442,7 +598,6 @@ public class simple
 					}
 					break;
 				}
-					
 			}
 			
 			// Trigger redrawing
@@ -452,108 +607,6 @@ public class simple
 		public void keyReleased(KeyEvent e){}
 
 		public void keyTyped(KeyEvent e){}
-		
-		
-		public void moveX(float n)
-		{
-
-			Matrix4f cam = new Matrix4f(camera.getCameraMatrix());
-			cam.invert();
-			Vector3f cop = camera.getCenterOfProjection();
-			Vector3f lap = camera.getLookAtPoint();
-			
-			Vector3f translationAxis = new Vector3f();
-			translationAxis.sub(lap, cop);
-			translationAxis.scale(n);
-			translationAxis.normalize();
-			
-			cop.add(translationAxis);
-			camera.setCenterOfProjection(cop);
-			lap.add(translationAxis);
-			camera.setLookAtPoint(lap);
-			
-			if(withObj)
-			{
-				Matrix4f plane = shape.getTransformation();
-				Matrix4f trans = new Matrix4f();
-				trans.set(1);
-				//translationAxis.negate();
-				trans.setTranslation(translationAxis);
-				//plane.mul(cam, plane);
-				plane.mul(trans, plane);
-				cam.invert();
-				//plane.mul(cam, plane);
-				shape.setTransformation(plane);
-			}
-		}
-		
-		public void moveY(float n)
-		{
-			Matrix4f cam = new Matrix4f(camera.getCameraMatrix());
-			Vector3f cop = camera.getCenterOfProjection();
-			Vector3f lap = camera.getLookAtPoint();
-			Vector3f uv = camera.getUpVector();
-			
-			Vector3f z = new Vector3f();
-			z.sub(cop, lap);
-			z.normalize();
-			
-			Vector3f translationAxis =  new Vector3f();
-			translationAxis.cross(uv, z);
-			translationAxis.scale(n);
-			
-			cop.add(translationAxis);
-			camera.setCenterOfProjection(cop);
-			lap.add(translationAxis);
-			camera.setLookAtPoint(lap);
-			
-			if(withObj)
-			{
-				Matrix4f plane = shape.getTransformation();
-				Matrix4f trans = new Matrix4f();
-				trans.set(1);
-				trans.setTranslation(translationAxis);
-				plane.mul(trans, plane);
-				shape.setTransformation(plane);
-			}
-		}
-		
-		public void moveZ(float n)
-		{
-			Vector3f cop = camera.getCenterOfProjection();
-			Vector3f lap = camera.getLookAtPoint();
-			Vector3f uv = camera.getUpVector();
-						
-			Vector3f translationAxis =  new Vector3f();
-			translationAxis = uv;
-			//translationAxis.scale(n);
-			
-			if(n>0)
-			{
-				cop.add(translationAxis);
-				lap.add(translationAxis);
-			}
-			else
-			{
-				cop.sub(translationAxis);
-				lap.sub(translationAxis);
-			}
-			//cop.add(translationAxis);
-			camera.setCenterOfProjection(cop);
-			//lap.add(translationAxis);
-			camera.setLookAtPoint(lap);
-			
-			if(withObj)
-			{
-				Matrix4f plane = shape.getTransformation();
-				Matrix4f trans = new Matrix4f();
-				trans.set(1);
-				translationAxis.negate();
-				trans.setTranslation(translationAxis);
-				plane.mul(trans, plane);
-				shape.setTransformation(plane);
-			}
-		}
 
 	}
 	
@@ -567,49 +620,45 @@ public class simple
 	{		
 		// Make a render panel. The init function of the renderPanel
 		// (see above) will be called back for initialization.
-		/*
+		
 		System.out.println("Which exercise?");
 		do{
 			exerciseNr = new Scanner(System.in).nextInt();
 		}
 		while(exerciseNr<0 && exerciseNr>3);
-		*/
+		 
 		switch(exerciseNr)
 		{
 			case 1:{
-				// exercise 2.1
-				renderPanel = new HouseRenderPanel();
+				renderPanel = new CylinderRenderPanel();
+				break;
+			}
+			case 2:{
+				renderPanel = new TorusRenderPanel();
 				break;
 			}
 			case 3:{
-				// exercise 2.3
-				int fractalN=10;
-				renderPanel = new FractalLandscapeRenderPanel(fractalN, 100, 100, 100);
+				renderPanel = new SceneRenderPanel();
 				break;
 			}
-			case 4:{
-				// exercise 2.4
-				int fractalN=10;
-				renderPanel = new FractalLandscapeRenderPanel(fractalN, 500, 500, 500);
-
-				currentstep = 1f;
-				// Add a mouse and key listener
-			    renderPanel.getCanvas().addMouseListener(new MyMouseListener());
-			    renderPanel.getCanvas().addMouseMotionListener(new TrackballMouseMotionListener());
-			    renderPanel.getCanvas().addKeyListener(new MyKeyListener());
+			default:
+				renderPanel = new SimpleRenderPanel();
 				break;
-			}
 		}
 		
 		// Make the main window of this application and add the renderer to it
 		JFrame jframe = new JFrame("simple");
-		jframe.setSize(width, height);
+		jframe.setSize(500, 500);
 		jframe.setLocationRelativeTo(null); // center of screen
 		jframe.getContentPane().add(renderPanel.getCanvas());// put the canvas into a JFrame window
 
+		// Add a mouse and key listener
+	    renderPanel.getCanvas().addMouseListener(new SimpleMouseListener());
+	    renderPanel.getCanvas().addKeyListener(new SimpleKeyListener());
 		renderPanel.getCanvas().setFocusable(true);   	    	    
 	    
 	    jframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	    jframe.setVisible(true); // show window
 	}
 }
+	
