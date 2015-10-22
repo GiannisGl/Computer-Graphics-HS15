@@ -29,6 +29,14 @@ public class Frustum {
 		projectionMatrix.set(f);
 	}
 	
+	public void setProjectionMatrix(float near, float far, float aspect, float fov){
+		projectionMatrix = new Matrix4f();	
+		projectionMatrix.setRow(0, (float) (1/(aspect*Math.tan(fov/2))), 0, 0, 0);
+		projectionMatrix.setRow(1, 0, (float) (1/Math.tan(fov/2)), 0, 0);
+		projectionMatrix.setRow(2, 0, 0, (float) ((near+far)/(near-far)), 2*near*far/(near-far));
+		projectionMatrix.setRow(3, 0 , 0, -1, 0); 
+	}
+	
 	/**
 	 * Return the 4x4 projection matrix, which is used for example by 
 	 * the renderer.
