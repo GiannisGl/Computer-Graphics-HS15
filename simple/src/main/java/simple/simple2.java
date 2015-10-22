@@ -288,7 +288,7 @@ public class simple2
 			{
 				renderContext = r;
 				int segments = 10;
-				int hSegments = 10;
+				int hSegments = 100;
 				int centralRadius = 3;
 				float radius = 1f;
 				this.renderer(r, torus(segments, hSegments, centralRadius, radius));
