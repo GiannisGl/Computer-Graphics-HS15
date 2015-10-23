@@ -2,6 +2,7 @@ package simple;
 
 import jrtr.*;
 import jrtr.glrenderer.*;
+import jrtr.swrenderer.SWRenderPanel;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -31,7 +32,7 @@ public class simple
 	 * provide a call-back function for initialization. Here we construct
 	 * a simple 3D scene and start a timer task to generate an animation.
 	 */ 
-	public final static class SimpleRenderPanel extends GLRenderPanel
+	public final static class SimpleRenderPanel extends SWRenderPanel
 	{
 		/**
 		 * Initialization call-back. We initialize our renderer here.
@@ -147,7 +148,7 @@ public class simple
 			}
 	}
 		
-		public final static class CylinderRenderPanel extends GLRenderPanel
+		public final static class CylinderRenderPanel extends SWRenderPanel
 		{
 			/**
 			 * Initialization call-back. We initialize our renderer here.
@@ -277,7 +278,7 @@ public class simple
 		
 		}
 		
-		public final static class TorusRenderPanel extends GLRenderPanel
+		public final static class TorusRenderPanel extends SWRenderPanel
 		{
 			/**
 			 * Initialization call-back. We initialize our renderer here.
@@ -287,8 +288,8 @@ public class simple
 			public final  void init(RenderContext r)
 			{
 				renderContext = r;
-				int segments = 5000;
-				int hSegments = 5000;
+				int segments = 100;
+				int hSegments = 100;
 				int centralRadius = 3;
 				float radius = 1f;
 				this.renderer(r, torus(segments, hSegments, centralRadius, radius));

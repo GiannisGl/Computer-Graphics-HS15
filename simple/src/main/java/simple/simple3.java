@@ -1,6 +1,7 @@
 package simple;
 
 import jrtr.*;
+import jrtr.glrenderer.GLRenderPanel;
 import jrtr.swrenderer.SWRenderPanel;
 
 import javax.swing.*;
