@@ -2,6 +2,7 @@ package simple;
 
 import jrtr.*;
 import jrtr.glrenderer.*;
+import jrtr.swrenderer.SWRenderPanel;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -36,7 +37,7 @@ public class simple2
 	static int exerciseNr=4;
 	static boolean withObj=true;
 
-	public final static class HouseRenderPanel extends GLRenderPanel
+	public final static class HouseRenderPanel extends SWRenderPanel
 	{
 		/**
 		 * Initialization call-back. We initialize our renderer here.

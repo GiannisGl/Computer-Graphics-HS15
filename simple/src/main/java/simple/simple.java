@@ -288,8 +288,8 @@ public class simple
 			public final  void init(RenderContext r)
 			{
 				renderContext = r;
-				int segments = 100;
-				int hSegments = 100;
+				int segments = 10;
+				int hSegments = 10;
 				int centralRadius = 3;
 				float radius = 1f;
 				this.renderer(r, torus(segments, hSegments, centralRadius, radius));

@@ -10,11 +10,14 @@ import jrtr.VertexData;
 import jrtr.glrenderer.GLRenderPanel;
 
 import java.awt.image.*;
+import java.util.Arrays;
 import java.util.ListIterator;
 
+import javax.vecmath.Matrix3d;
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector2f;
+import javax.vecmath.Vector3d;
 import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
 
@@ -91,6 +94,8 @@ public class SWRenderContext implements RenderContext {
 	 */
 	private void draw(RenderItem renderItem)
 	{
+		clear();
+		
 		Matrix4f objMatrix = renderItem.getT();
 		Matrix4f cam = sceneManager.getCamera().getCameraMatrix();
 		Matrix4f projMatrix = sceneManager.getFrustum().getProjectionMatrix();
@@ -149,6 +154,17 @@ public class SWRenderContext implements RenderContext {
 			}
 		}
 
+		// The zBuffer initialized with infinity values
+		double[][] zBuffer = new double[colorBuffer.getWidth()][colorBuffer.getHeight()];
+		for(int x=0; x<zBuffer.length; x++)
+		{
+			for(int y=0; y<zBuffer[0].length; y++)
+			{
+				zBuffer[x][y]=0;
+			}
+		}
+
+		// arrays for the three vertices of the triangle to be rasterized
 		float[][] positions = new float[3][4];
 		float[][] colors = new float[3][3];
 		float[][] normals = new float[3][3];
@@ -183,72 +199,160 @@ public class SWRenderContext implements RenderContext {
 			
 			k++;
 			
-			Vector2f imageVertex = new Vector2f(vertex.x/vertex.w, vertex.y/vertex.w);
-			colorBuffer.setRGB((int) imageVertex.x, (int) imageVertex.y, (int) (Math.pow(2, 24)-1));
-
+			if(vertex.w>0)
+			{
+				Vector2f imageVertex = new Vector2f(vertex.x/vertex.w, vertex.y/vertex.w);
+				if(imageVertex.x>=0 && imageVertex.x<colorBuffer.getWidth() && imageVertex.y>=0 && imageVertex.y<colorBuffer.getHeight())
+					colorBuffer.setRGB((int) imageVertex.x, (int) imageVertex.y, (int) (Math.pow(2, 24)-1));
+			}
+			
+			
 			if(k==3)
 			{
-				rasterizeTriangle(positions, colors, normals, textcoords);
+				Matrix3f triangMatrix = new Matrix3f();
+				triangMatrix.setColumn(0, positions[0][0], positions[0][1], positions[0][3]);
+				triangMatrix.setColumn(1, positions[1][0], positions[1][1], positions[1][3]);
+				triangMatrix.setColumn(2, positions[2][0], positions[2][1], positions[2][3]);
+				//if(triangMatrix.determinant()>=0)
+				{
+					rasterizeTriangle(positions, colors, normals, textcoords, zBuffer);
+				}
 				k=0;
 				triang++;
 			}
-			if(triang==19)
-				break;
+			//if(triang==18)
+				//break;
 		}
 	}
 	
 	
 	
-	public void rasterizeTriangle(float[][] positions, float[][] colors, float[][] normals, float[][] textcoords)
+	public void rasterizeTriangle(float[][] positions, float[][] colors, float[][] normals, float[][] textcoords, double[][] zBuffer)
 	{
-		float[][] positions2D = new float[3][3];
+		// 2D homogeneous coordinates (omitting z coordinate)
+		float[][] positions2DHom = new float[3][3];
 		for(int i=0; i<3; i++){
-			positions2D[i][0]=positions[i][0];
-			positions2D[i][1]=positions[i][1];
-			positions2D[i][2]=positions[i][3];
+			positions2DHom[i][0]=positions[i][0];
+			positions2DHom[i][1]=positions[i][1];
+			positions2DHom[i][2]=positions[i][3];
 		}
 		
+		// find barycentric coordinates matrix
 		Matrix3f barCoordMatrix = new Matrix3f();
-		barCoordMatrix.setColumn(0, positions2D[0]);
-		barCoordMatrix.setColumn(1, positions2D[1]);
-		barCoordMatrix.setColumn(2, positions2D[2]);
+		barCoordMatrix.setRow(0, positions2DHom[0]);
+		barCoordMatrix.setRow(1, positions2DHom[1]);
+		barCoordMatrix.setRow(2, positions2DHom[2]);
 		barCoordMatrix.invert();
-		
-		if(positions[0][2]>0 && positions[1][2]>0 && positions[2][2]>0)
+				
+		// all w's positive
+		if(positions2DHom[0][2]>0 && positions2DHom[1][2]>0 && positions2DHom[2][2]>0)
 		{
-			int minX=getPixelMinCoord(positions2D,0);
-			int minY=getPixelMinCoord(positions2D, 1);
-			int maxX=getPixelMaxCoord(positions2D, 0);
-			int maxY=getPixelMaxCoord(positions2D, 1);
+			// Homogeneous division
+			float[][] positions2D = new float[3][2];
+			for(int i=0; i<3; i++)
+			{
+				positions2D[i][0]=positions2DHom[i][0]/positions2DHom[i][2];
+				positions2D[i][1]=positions2DHom[i][1]/positions2DHom[i][2];
+			}
+			
+			int minX=getPixelMinCoord(positions2D,0)<0? 0: getPixelMinCoord(positions2D,0);
+			int minY=getPixelMinCoord(positions2D,1)<0? 0: getPixelMinCoord(positions2D,1);
+			int maxX=getPixelMaxCoord(positions2D,0)>=colorBuffer.getWidth()? colorBuffer.getWidth()-1: getPixelMaxCoord(positions2D,0);
+			int maxY=getPixelMaxCoord(positions2D,1)>=colorBuffer.getHeight()? colorBuffer.getHeight()-1: getPixelMaxCoord(positions2D,1);
 			
 			for(int x=minX; x<=maxX; x++)
 			{
 				for(int y=minY; y<=maxY; y++)
 				{
-					Vector3f pixel = new Vector3f(x,y,1);
-					barCoordMatrix.transform(pixel);
-										
-					float alpha_w = pixel.x;
-					float bita_w = pixel.y;
-					float gamma_w = pixel.z; 
-					if(alpha_w>0 && bita_w>0 && gamma_w>0){
-						colorBuffer.setRGB(x, y, (int) (colors[0][0]*(Math.pow(2, 24)-1)+colors[0][1]*(Math.pow(2, 16)-1)+colors[0][2]*(Math.pow(2,8)-1)));
-					}
+					drawPixel(x, y, barCoordMatrix, colors, zBuffer);
 				}
 			}
-			
-			
+		}
+	
+		else if(positions2DHom[0][2]<0 && positions2DHom[1][2]<0 && positions2DHom[2][2]<0)
+		{}
+		else
+		{
+			for(int x=0; x<colorBuffer.getWidth(); x++)
+			{
+				for(int y=0; y<colorBuffer.getHeight(); y++)
+				{
+
+					drawPixel(x, y, barCoordMatrix, colors, zBuffer);
+				}
+			}
 		}
 		
 	}
 	
+	
+	public void drawPixel(int x, int y, Matrix3f barCoordMatrix, float[][] colors, double[][] zBuffer)
+	{
+		// barycentric coordinates matrix transposed for finding a_w, b_w, c_w
+		Matrix3f barCoordMatrixTranspose = new Matrix3f();
+		barCoordMatrixTranspose.transpose(barCoordMatrix);
+		
+		Vector3f pixel = new Vector3f(x,y,1);
+		barCoordMatrixTranspose.transform(pixel);
+		float alpha_w = pixel.x;
+		float bita_w = pixel.y;
+		float gamma_w = pixel.z; 
+		if(alpha_w>0 && bita_w>0 && gamma_w>0){
+			double oneOverW = getOneOverW(new Vector3f(x,y,1), new Matrix3f(barCoordMatrix));
+			double z = zBuffer[x][y];
+			if(oneOverW>=z)
+			{
+				zBuffer[x][y]=oneOverW;
+				colorBuffer.setRGB(x, y, getColor(new Vector3f(x,y,1), colors, new Matrix3f(barCoordMatrix)));
+			}
+		}
+	}
+	
+	public int getColor(Vector3f pixel, float[][] colors, Matrix3f barCoord)
+	{
+		// red component
+		int redColor = (int) (getColorCoord(pixel, colors, barCoord, 0)*(Math.pow(2, 8)-1))<<16;
+		// green component
+		int greenColor = (int) (getColorCoord(pixel, colors, barCoord, 1)*(Math.pow(2, 8)-1))<<8;
+		// blue component
+		int blueColor = (int) (getColorCoord(pixel, colors, barCoord, 2)*(Math.pow(2,8)-1));
+		
+		return redColor+greenColor+blueColor;
+	}
+	
+	public double getColorCoord(Vector3f pixel, float[][] colors, Matrix3f barCoord, int coord)
+	{		
+		float u0 = colors[0][coord];
+		float u1 = colors[1][coord];
+		float u2 = colors[2][coord];
+		
+		Vector3f barColorCoord = new Vector3f(u0, u1, u2);
+		barCoord.transform(barColorCoord);
+		
+		float u = barColorCoord.dot(pixel);
+		double oneOverW = getOneOverW(pixel, barCoord);
+		
+		double color = u/oneOverW;
+			
+		return color;
+	}
+	
+	public double getOneOverW(Vector3f pixel, Matrix3f barCoord)
+	{
+		Vector3d pixel2 = new Vector3d(pixel);
+		Vector3d constantFunction = new Vector3d(1,1,1);
+		Matrix3d barCoord2 = new Matrix3d(barCoord);
+		barCoord2.transform(constantFunction);
+		
+		return constantFunction.dot(pixel2);
+	}
+	
 	public int getPixelMinCoord(float[][] positions, int coord)
 	{
-		int lastCoord= positions[0].length-1;
-		float min = positions[0][coord]/positions[0][lastCoord];
+		float min = positions[0][coord];
 		for(int i=1; i<positions.length; i++)
 		{
-			float xW = positions[i][coord]/positions[i][lastCoord];
+			float xW = positions[i][coord];
 			min= xW<min? xW: min;
 		}
 		
@@ -257,11 +361,10 @@ public class SWRenderContext implements RenderContext {
 	
 	public int getPixelMaxCoord(float[][] positions, int coord)
 	{
-		int lastCoord= positions[0].length-1;
-		float max = positions[0][coord]/positions[0][lastCoord];
+		float max = positions[0][coord];
 		for(int i=1; i<positions.length; i++)
 		{
-			float yW = positions[i][coord]/positions[i][lastCoord];
+			float yW = positions[i][coord];
 			max= yW>max? yW: max;
 		}
 		
@@ -302,5 +405,16 @@ public class SWRenderContext implements RenderContext {
 	public VertexData makeVertexData(int n)
 	{
 		return new SWVertexData(n);		
+	}
+	
+	public void clear()
+	{
+		for(int x=0; x<colorBuffer.getWidth(); x++)
+		{
+			for(int y=0; y<colorBuffer.getHeight(); y++)
+			{
+				colorBuffer.setRGB(x, y, 0);
+			}
+		}
 	}
 }
