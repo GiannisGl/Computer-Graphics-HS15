@@ -331,7 +331,8 @@ public class SWRenderContext implements RenderContext {
 		double u = uCoord*textWidth;
 		double v = vCoord*textHeight;
 		
-		int color = getNearestNeighbourColor(u, v);
+		//int color = getNearestNeighbourColor(u, v);
+		int color = getBilinearInterpolationColor(u, v);
 		
 		return color;
 	}
@@ -368,7 +369,38 @@ public class SWRenderContext implements RenderContext {
 	
 	public int getBilinearInterpolationColor(double u, double v)
 	{
-		return 0;
+		int uInt = (int) u;
+		int vInt = (int) v;
+		
+		int c=0;
+		
+		if((uInt+1)<texture.getWidth()&&(vInt+1)<texture.getHeight())
+		{
+			double w_u = u-uInt;
+			double w_u1 = 1-w_u;
+						
+			// for blue, green, red
+			for(int i=0; i<2; i++){
+				
+				int tex00 = (texture.getRGB(uInt, vInt)>> 8*i)&0xFF;
+				int tex01 = (texture.getRGB(uInt+1, vInt)>>8*i)&0xFF;
+				int tex10 = (texture.getRGB(uInt, vInt+1)>>8*i)&0xFF;
+				int tex11 = (texture.getRGB(uInt+1, vInt+1)>>8*i)&0xFF;
+				
+				double c_b = tex00*w_u1+tex01*w_u;
+				double c_t = tex10*w_u1+tex11*w_u;
+				
+				double w_v = (v-vInt);
+				double w_v1 = 1-w_v; 
+				double c1 = c_b*w_v1+c_t*w_v;
+				int cInt =(int) c1;
+				c += (cInt<<8*i);
+			}
+		}
+		else
+			c = texture.getRGB(texture.getWidth()-1, texture.getHeight()-1);
+			
+		return  c;
 	}
 	
 	

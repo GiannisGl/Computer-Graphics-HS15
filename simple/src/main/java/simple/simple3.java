@@ -406,6 +406,15 @@ public class simple3
 				System.out.print(e.getMessage());
 			}
 			
+
+
+			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/3);
+					
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,0f,3f));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
+			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+			
+			
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
 		}
