@@ -3,6 +3,7 @@ package simple;
 import jrtr.*;
 import jrtr.glrenderer.GLRenderPanel;
 import jrtr.swrenderer.SWRenderPanel;
+import jrtr.swrenderer.SWTexture;
 import simple.VirtualTrackball.PointToSphere;
 import simple.VirtualTrackball.SimpleKeyListener;
 import simple.VirtualTrackball.TrackBallMouseListener;
@@ -137,13 +138,13 @@ public class simple3
 			    	System.out.print("Problem with shader:\n");
 			    	System.out.print(e.getMessage());
 			    }
-	
+
 			    // Make a material that can be used for shading
 				material = new Material();
 				material.shader = diffuseShader;
-				material.diffuseMap = renderContext.makeTexture();
+				material.swTexture = (SWTexture) renderContext.makeTexture();
 				try {
-					material.diffuseMap.load("../textures/plant.jpg");
+					material.swTexture.load("C:/Users/Giannis/Computer-Graphics/Computergrafik-Basecode/textures/plant.jpg");
 				} catch(Exception e) {				
 					System.out.print("Could not load texture.\n");
 					System.out.print(e.getMessage());
@@ -324,11 +325,31 @@ public class simple3
 			c[6*segments+3+1]=0;
 			c[6*segments+3+2]=0;
 			
+
+			// Texture coordinates of the round faces
+			float[] t = new float[2*2*segments+2*2];
+			for(int i=0; i<segments; i++)
+			{
+				t[4*i]= (float) i/segments;
+				t[4*i+1]= (float) 1;
+				t[4*i+2]= (float) i/segments;
+				t[4*i+3]= (float) 0;	
+			}
+			
+			// Texture coordinates  of the top vertex
+			t[4*segments]= 0.5f;
+			t[4*segments+1]=0;
+						
+			// Texture coordinates  of the bottom vertex 
+			t[4*segments+2]=0.5f;
+			t[4*segments+2+1]=1;
+			
 			
 			
 			VertexData vertexData = renderContext.makeVertexData(2*segments+2);
 			vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
 			vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+			vertexData.addElement(t, VertexData.Semantic.TEXCOORD, 2);
 			
 			// The triangles (three vertex indices for each triangle)
 			int[] indices = new int[4*3*segments];
@@ -374,6 +395,17 @@ public class simple3
 			// Add the object to the scene Manager
 			sceneManager.addShape(cylinder);
 
+		    // Make a material that can be used for shading
+			material = new Material();
+			material.shader = diffuseShader;
+			material.swTexture = (SWTexture) renderContext.makeTexture();
+			try {
+				material.swTexture.load("C:/Users/Giannis/Computer-Graphics/Computergrafik-Basecode/textures/plant.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
+			
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
 		}
@@ -390,8 +422,8 @@ public class simple3
 		public final  void init(RenderContext r)
 		{
 			renderContext = r;
-			int segments = 20;
-			int hSegments = 10;
+			int segments = 40;
+			int hSegments = 40;
 			int centralRadius = 3;
 			float radius = 1f;
 			this.renderer(r, torus(segments, hSegments, centralRadius, radius));
@@ -426,11 +458,23 @@ public class simple3
 					c[hSegments*3*i+3*j+2]=(float) Math.floorMod(i, 2);
 				}
 			}
+			
+			// Texture coordinates 
+			float[] t = new float[hSegments*2*segments];
+			for(int i=0; i<segments; i++)
+			{
+				for(int j=0; j<hSegments; j++)
+				{
+					t[hSegments*2*i+2*j] = (float) i/segments;
+					t[hSegments*2*i+2*j+1] = (float) j/hSegments;
+				}
+			}
 							
 			
 			VertexData vertexData = renderContext.makeVertexData(hSegments*segments);
 			vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
 			vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+			vertexData.addElement(t, VertexData.Semantic.TEXCOORD, 2);
 			
 			// The triangles (three vertex indices for each triangle)
 			int[] indices = new int[2*hSegments*3*segments];
@@ -461,6 +505,18 @@ public class simple3
 			shape = torus;
 			// Add the object to the scene Manager
 			sceneManager.addShape(torus);
+			
+
+		    // Make a material that can be used for shading
+			material = new Material();
+			material.shader = diffuseShader;
+			material.swTexture = (SWTexture) renderContext.makeTexture();
+			try {
+				material.swTexture.load("C:/Users/Giannis/Computer-Graphics/Computergrafik-Basecode/textures/plant.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
 					
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
@@ -609,7 +665,7 @@ public class simple3
 		// Make a render panel. The init function of the renderPanel
 		// (see above) will be called back for initialization.
 		
-		renderPanel = new CubeRenderPanel();
+		renderPanel = new CylinderRenderPanel();
 		
 		// Add a key listener
 	    renderPanel.getCanvas().addKeyListener(new SimpleKeyListener());

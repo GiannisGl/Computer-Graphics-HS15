@@ -1,5 +1,6 @@
 package jrtr.swrenderer;
 
+import jrtr.Material;
 import jrtr.RenderContext;
 import jrtr.RenderItem;
 import jrtr.SceneManagerInterface;
@@ -10,7 +11,6 @@ import jrtr.VertexData;
 import jrtr.glrenderer.GLRenderPanel;
 
 import java.awt.image.*;
-import java.util.Arrays;
 import java.util.ListIterator;
 
 import javax.vecmath.Matrix3d;
@@ -34,6 +34,8 @@ public class SWRenderContext implements RenderContext {
 
 	private SceneManagerInterface sceneManager;
 	private BufferedImage colorBuffer;
+	private Material material=null;
+	private BufferedImage texture=null;
 		
 	public void setSceneManager(SceneManagerInterface sceneManager)
 	{
@@ -96,6 +98,9 @@ public class SWRenderContext implements RenderContext {
 	{
 		clear();
 		
+		setMaterial(renderItem.getShape().getMaterial());
+		
+		// calculating total Matrix
 		Matrix4f objMatrix = renderItem.getT();
 		Matrix4f cam = sceneManager.getCamera().getCameraMatrix();
 		Matrix4f projMatrix = sceneManager.getFrustum().getProjectionMatrix();
@@ -104,8 +109,8 @@ public class SWRenderContext implements RenderContext {
 		int startY = colorBuffer.getMinY();
 		int height = colorBuffer.getHeight();
 		int width = colorBuffer.getWidth();
-		viewportMatrix.setRow(0, width/2, 0, 0, (2*startX+width)/2);
-		viewportMatrix.setRow(1, 0, -height/2, 0, (2*startY+height)/2);
+		viewportMatrix.setRow(0, width/2f, 0, 0, (2*startX+width)/2f);
+		viewportMatrix.setRow(1, 0, -height/2f, 0, (2*startY+height)/2f);
 		viewportMatrix.setRow(2, 0, 0, 0.5f, 0.5f);
 		viewportMatrix.setRow(3, 0, 0, 0, 1);
 		
@@ -114,7 +119,7 @@ public class SWRenderContext implements RenderContext {
 		totalM.mul(projMatrix, totalM);
 		totalM.mul(viewportMatrix, totalM);
 		
-		
+		// collecting all data from renderItem
 		VertexData vertexData = renderItem.getShape().getVertexData();
 		ListIterator<VertexData.VertexElement> itr = vertexData.getElements()
 				.listIterator(0);
@@ -172,7 +177,6 @@ public class SWRenderContext implements RenderContext {
 		
 		int k=0;
 		int triang=0;
-
 		for(int j=0; j<indices.length; j++)
 		{
 
@@ -199,6 +203,7 @@ public class SWRenderContext implements RenderContext {
 			
 			k++;
 			
+			// Exercise 1
 			if(vertex.w>0)
 			{
 				Vector2f imageVertex = new Vector2f(vertex.x/vertex.w, vertex.y/vertex.w);
@@ -206,14 +211,14 @@ public class SWRenderContext implements RenderContext {
 					colorBuffer.setRGB((int) imageVertex.x, (int) imageVertex.y, (int) (Math.pow(2, 24)-1));
 			}
 			
-			
+			// Exercise 2
 			if(k==3)
 			{
 				Matrix3f triangMatrix = new Matrix3f();
 				triangMatrix.setColumn(0, positions[0][0], positions[0][1], positions[0][3]);
 				triangMatrix.setColumn(1, positions[1][0], positions[1][1], positions[1][3]);
 				triangMatrix.setColumn(2, positions[2][0], positions[2][1], positions[2][3]);
-				//if(triangMatrix.determinant()>=0)
+				if(triangMatrix.determinant()>=0)
 				{
 					rasterizeTriangle(positions, colors, normals, textcoords, zBuffer);
 				}
@@ -264,7 +269,7 @@ public class SWRenderContext implements RenderContext {
 			{
 				for(int y=minY; y<=maxY; y++)
 				{
-					drawPixel(x, y, barCoordMatrix, colors, zBuffer);
+					drawPixel(x, y, barCoordMatrix, colors, textcoords, zBuffer);
 				}
 			}
 		}
@@ -278,7 +283,7 @@ public class SWRenderContext implements RenderContext {
 				for(int y=0; y<colorBuffer.getHeight(); y++)
 				{
 
-					drawPixel(x, y, barCoordMatrix, colors, zBuffer);
+					drawPixel(x, y, barCoordMatrix, colors, textcoords, zBuffer);
 				}
 			}
 		}
@@ -286,7 +291,7 @@ public class SWRenderContext implements RenderContext {
 	}
 	
 	
-	public void drawPixel(int x, int y, Matrix3f barCoordMatrix, float[][] colors, double[][] zBuffer)
+	public void drawPixel(int x, int y, Matrix3f barCoordMatrix, float[][] colors, float[][] textures, double[][] zBuffer)
 	{
 		// barycentric coordinates matrix transposed for finding a_w, b_w, c_w
 		Matrix3f barCoordMatrixTranspose = new Matrix3f();
@@ -303,11 +308,71 @@ public class SWRenderContext implements RenderContext {
 			if(oneOverW>=z)
 			{
 				zBuffer[x][y]=oneOverW;
-				colorBuffer.setRGB(x, y, getColor(new Vector3f(x,y,1), colors, new Matrix3f(barCoordMatrix)));
+				int color=0;
+				if(texture!=null)
+					color = getTextureColor(new Vector3f(x,y,1), textures, new Matrix3f(barCoordMatrix));
+				else
+					color = getColor(new Vector3f(x,y,1), colors, new Matrix3f(barCoordMatrix));
+				colorBuffer.setRGB(x, y, color);
 			}
 		}
 	}
 	
+	public int getTextureColor(Vector3f pixel, float[][] textures, Matrix3f barCoord)
+	{
+		// u component
+		double uCoord = getColorCoord(pixel, textures, barCoord, 0);
+		// v component
+		double vCoord =  getColorCoord(pixel, textures, barCoord, 1);
+		
+		
+		int textHeight = texture.getHeight();
+		int textWidth = texture.getWidth();
+		double u = uCoord*textWidth;
+		double v = vCoord*textHeight;
+		
+		int color = getNearestNeighbourColor(u, v);
+		
+		return color;
+	}
+	
+	public int getNearestNeighbourColor(double u, double v)
+	{
+		int uInt = (int) u;
+		int vInt = (int) v;
+		
+		int uNearest = uInt;
+		int vNearest = vInt;
+		
+		double distance=1;
+		for(int i=0; i<2; i++)
+		{
+			for(int j=0; j<2; j++)
+			{
+				double distanceTmp = Math.pow(u-(uInt+i), 2)+Math.pow(v-(vInt+j), 2);
+				if((uInt+i)<texture.getWidth()&&(vInt+j)<texture.getHeight())
+				{
+					if(distanceTmp<distance)
+					{
+						distance=distanceTmp;
+						uNearest = uInt+i;
+						vNearest = vInt+j;
+					}
+				}
+			}
+		}
+		
+		int color = texture.getRGB(uNearest, vNearest);
+		return color;
+	}
+	
+	public int getBilinearInterpolationColor(double u, double v)
+	{
+		return 0;
+	}
+	
+	
+		
 	public int getColor(Vector3f pixel, float[][] colors, Matrix3f barCoord)
 	{
 		// red component
@@ -333,6 +398,8 @@ public class SWRenderContext implements RenderContext {
 		double oneOverW = getOneOverW(pixel, barCoord);
 		
 		double color = u/oneOverW;
+		if(color<0 || color>1)
+			System.out.println("color: "+color);
 			
 		return color;
 	}
@@ -407,14 +474,21 @@ public class SWRenderContext implements RenderContext {
 		return new SWVertexData(n);		
 	}
 	
+	public void setMaterial(Material m)
+	{
+		material=m;
+		if(material!=null)
+			texture=material.swTexture.texture;
+		else
+			texture=null;
+			
+		//texture = m.swTexture.texture;
+	}
+	
 	public void clear()
 	{
-		for(int x=0; x<colorBuffer.getWidth(); x++)
-		{
-			for(int y=0; y<colorBuffer.getHeight(); y++)
-			{
-				colorBuffer.setRGB(x, y, 0);
-			}
-		}
+		int width = colorBuffer.getWidth();
+		int height = colorBuffer.getHeight();
+		setViewportSize(width, height);
 	}
 }

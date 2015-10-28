@@ -2,6 +2,8 @@ package jrtr;
 
 import javax.vecmath.*;
 
+import jrtr.swrenderer.SWTexture;
+
 /**
  * Stores the properties of a material.
  */
@@ -14,6 +16,7 @@ public class Material {
 	public Vector3f ambient;
 	public float shininess;
 	public Shader shader;
+	public SWTexture swTexture;
 	
 	public Material()
 	{
@@ -27,5 +30,6 @@ public class Material {
 		ambientMap = null;
 		alphaMap = null;
 		shader = null;
+		swTexture=null;
 	}
 }
