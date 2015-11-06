@@ -163,7 +163,7 @@ public class simple2
 			}
 	}
 	
-	public static final class FractalLandscapeRenderPanel extends GLRenderPanel
+	public static final class FractalLandscapeRenderPanel extends SWRenderPanel
 	{
 		
 		int fractalSizeN;

@@ -159,7 +159,7 @@ public class SWRenderContext implements RenderContext {
 			}
 		}
 
-		// The zBuffer initialized with infinity values
+		// The zBuffer initialized with zero values
 		double[][] zBuffer = new double[colorBuffer.getWidth()][colorBuffer.getHeight()];
 		for(int x=0; x<zBuffer.length; x++)
 		{
@@ -380,7 +380,7 @@ public class SWRenderContext implements RenderContext {
 			double w_u1 = 1-w_u;
 						
 			// for blue, green, red
-			for(int i=0; i<2; i++){
+			for(int i=0; i<3; i++){
 				
 				int tex00 = (texture.getRGB(uInt, vInt)>> 8*i)&0xFF;
 				int tex01 = (texture.getRGB(uInt+1, vInt)>>8*i)&0xFF;
@@ -514,7 +514,6 @@ public class SWRenderContext implements RenderContext {
 		else
 			texture=null;
 			
-		//texture = m.swTexture.texture;
 	}
 	
 	public void clear()
@@ -522,5 +521,6 @@ public class SWRenderContext implements RenderContext {
 		int width = colorBuffer.getWidth();
 		int height = colorBuffer.getHeight();
 		setViewportSize(width, height);
+		
 	}
 }
