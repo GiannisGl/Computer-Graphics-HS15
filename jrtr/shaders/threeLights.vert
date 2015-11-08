@@ -6,11 +6,9 @@
 
 // Uniform variables, passed in from host program via suitable 
 // variants of glUniform*
-uniform vec4[MAX_LIGHTS] light_colors;
-uniform vec4[MAX_LIGHTS] light_positions;
-
 uniform mat4 projection;
 uniform mat4 modelview;
+uniform vec4[MAX_LIGHTS] light_positions;
 uniform int nLights;
 
 // Input vertex attributes; passed in from host program to shader
@@ -27,12 +25,12 @@ void main()
 {		
 	// Compute dot product of normal and light direction
 	// and pass color to fragment shader
-	// Note: here we assume "lightDirection" is specified in camera coordinates,
+	// Note: here we assume "light_positions" is specified in camera coordinates,
 	// so we transform the normal to camera coordinates, and we don't transform
 	// the light direction, i.e., it stays in camera coordinates
 	for(int i=0; i<nLights; i++)
 	{
-		ndotl[i]=max(dot(modelview*vec4(normal,0),normalize(light_positions[i]-position)),0);
+		ndotl[i]=max(dot(modelview*vec4(normal,0),normalize(light_positions[i]-modelview*position)),0);
 	}
 	
 	// Pass texture coordiantes to fragment shader, OpenGL automatically

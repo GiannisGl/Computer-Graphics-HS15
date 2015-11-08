@@ -322,8 +322,9 @@ public class simple4
 
 			
 			Light light1 = new Light();
-			light1.position= new Vector3f(1f,0f,1f);
+			light1.position= new Vector3f(0f,10f, -10.f);
 			light1.type=Type.POINT;
+			light1.color= new Vector4f(1.f,1.f,1.f,1.f);
 			sceneManager.addLight(light1);
 			
 			Light light2 = new Light();
