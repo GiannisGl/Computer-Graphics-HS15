@@ -24,7 +24,7 @@ import jrtr.VertexData.VertexElement;
  * Implements a {@link RenderContext} (a renderer) using OpenGL
  * version 3 (or later).
  */
-public class GLRenderContext implements RenderContext {
+public class GLRenderContext2 implements RenderContext {
 
 	private SceneManagerInterface sceneManager;
 	private GL3 gl;
@@ -47,7 +47,7 @@ public class GLRenderContext implements RenderContext {
 	 *            the OpenGL rendering context. All OpenGL calls are directed to
 	 *            this object.
 	 */
-	public GLRenderContext(GLAutoDrawable drawable) {
+	public GLRenderContext2(GLAutoDrawable drawable) {
 		
 		// Some OpenGL initialization
 		gl = drawable.getGL().getGL3();
@@ -308,18 +308,22 @@ public class GLRenderContext implements RenderContext {
 			}
 			
 			// Pass a default light source to shader
-			String lightString = "lightDirection[" + 0 + "]";			
+			String lightString = "light_positions[" + 0 + "]";			
 			id = gl.glGetUniformLocation(activeShaderID, lightString);
 			if(id!=-1)
-				gl.glUniform4f(id, 0, 0, 1.f, 0.f);		// Set light direction
+				gl.glUniform4f(id, 0, 0, 1, 0.f);		// Set light direction
 			else
-				System.out.print("OutLOOP: Could not get location of uniform variable " + lightString + "\n");
-
-			String lightColor = "light_colors["+0+"]";
-			int idC = gl.glGetUniformLocation(activeShaderID, lightColor);
-			gl.glUniform4f(idC, 1.f, 1.f, 1.f, 1.f);
+				System.out.print("Could not get location of uniform variable " + lightString + "\n");
 			int nLights = 1;
 			
+			String lightColor = "light_colors["+ 0 +"]";
+			int idC = gl.glGetUniformLocation(activeShaderID, lightColor);
+			if(id!=-1)
+				gl.glUniform4f(idC, 1, 1, 1, 1);
+			
+			id = gl.glGetUniformLocation(activeShaderID, "nLights");
+			if(id!=-1)
+				gl.glUniform1i(id, nLights);		// Set number of lights
 			
 			// Iterate over all light sources in scene manager (overwriting the default light source)
 			Iterator<Light> iter = sceneManager.lightIterator();			
@@ -330,34 +334,36 @@ public class GLRenderContext implements RenderContext {
 				while(iter.hasNext() && nLights<8)
 				{
 					l = iter.next(); 
-					
+					if(l.type==Light.Type.DIRECTIONAL){
 					// Pass light direction to shader, we assume the shader stores it in an array "lightDirection[]"
-					lightString = "lightDirection[" + nLights + "]";			
-					id = gl.glGetUniformLocation(activeShaderID, lightString);
-					if(id!=-1)
-						gl.glUniform4f(id, l.direction.x, l.direction.y, l.direction.z, 0.f);		// Set light direction
-					else
-						System.out.print("InLOOP: Could not get location of uniform variable " + lightString + "\n");
-					
-					// Pass light color, we assume the shader stores it in an array "light_colors[]"
-					lightColor = "light_colors[" + nLights + "]";
-					idC = gl.glGetUniformLocation(activeShaderID, lightColor);
-					if(idC!=-1)
-						gl.glUniform4f(idC, l.color.x, l.color.y, l.color.z, l.color.w);
-					else
-						System.out.print("InLOOP: Could not get location of uniform variable " + lightColor + "\n");
+						lightString = "lightDirection[" + nLights + "]";			
+						id = gl.glGetUniformLocation(activeShaderID, lightString);
+						if(id!=-1)
+							gl.glUniform4f(id, l.direction.x, l.direction.y, l.direction.z, 0.f);		// Set light direction
+						else
+							System.out.print("Could not get location of uniform variable " + lightString + "\n");
+					}
+					else if(l.type==Light.Type.POINT){
+						// Pass light position to shader, we assume the shader stores it in an array "light_positions[]"
+						lightString = "light_positions[" + nLights + "]";			
+						id = gl.glGetUniformLocation(activeShaderID, lightString);
+						if(id!=-1)
+							gl.glUniform4f(id, l.position.x, l.position.y, l.position.z, 1.f);		// Set light position
+						else
+							System.out.print("Could not get location of uniform variable " + lightString + "\n");
+					}
 					
 					nLights++;
 				}
+				
+				// Pass number of lights to shader, we assume this is in a variable "nLights" in the shader
+				id = gl.glGetUniformLocation(activeShaderID, "nLights");
+				if(id!=-1)
+					gl.glUniform1i(id, nLights);		// Set number of lightrs
+// Only for debugging				
+//				else
+//					System.out.print("Could not get location of uniform variable nLights\n");
 			}
-			
-			// Pass number of lights to shader, we assume this is in a variable "nLights" in the shader
-			id = gl.glGetUniformLocation(activeShaderID, "nLights");
-			if(id!=-1)
-				gl.glUniform1i(id, nLights);		// Set number of lightrs
-//Only for debugging				
-//			else
-//				System.out.print("Could not get location of uniform variable nLights\n");
 		}
 	}
 

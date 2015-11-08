@@ -1,6 +1,7 @@
 package simple;
 
 import jrtr.*;
+import jrtr.Light.Type;
 import jrtr.glrenderer.*;
 import simple.simple.CylinderRenderPanel;
 import simple.simple.SceneRenderPanel;
@@ -22,12 +23,12 @@ public class simple4
 	static RenderContext renderContext;
 	static Shader normalShader;
 	static Shader diffuseShader;
+	static Shader threeLights;
 	static Material material;
 	static SimpleSceneManager sceneManager = new SimpleSceneManager();
 	static Shape shape;
 	static int width=500;
 	static int height=500;
-	static int exerciseNr=2;
 	static boolean withObj=true;
 	static int radius=Math.min(width,height);
 	static Vector3f p1;
@@ -36,6 +37,7 @@ public class simple4
 	static Vector3f axis = new Vector3f();
 	static float theta;
 	static Camera camera = sceneManager.getCamera();
+	static int exerciseNr=1;
 	
 	public final static class CubeRenderPanel extends GLRenderPanel
 	{
@@ -314,10 +316,40 @@ public class simple4
 			shape = cylinder;
 			// Add the object to the scene Manager
 			sceneManager.addShape(cylinder);
-			
 
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
+
+			
+			Light light1 = new Light();
+			light1.position= new Vector3f(1f,0f,1f);
+			light1.type=Type.POINT;
+			sceneManager.addLight(light1);
+			
+			Light light2 = new Light();
+			light2.position= new Vector3f(-1f,0f,1f); 
+			light2.type=Type.POINT;
+			//sceneManager.addLight(light2);
+			
+			
+			Light light3 = new Light();
+			light3.direction= new Vector3f(0f,0f,1f);
+			light3.type=Type.DIRECTIONAL;
+			light3.color= new Vector4f(1.f,0.f,0.f,1.f);
+			//sceneManager.addLight(light1);
+			
+			Light light4 = new Light();
+			light4.direction= new Vector3f(-1f,0f,2.f); 
+			light4.type=Type.DIRECTIONAL;
+			light4.color= new Vector4f(0.f,1.f,0.f,1.f);
+			//sceneManager.addLight(light2);
+
+			Light light5 = new Light();
+			light5.direction= new Vector3f(2.f,-1.f,0f); 
+			light5.type=Type.DIRECTIONAL;
+			light5.color= new Vector4f(0.f,0.f,1.f,1.f);
+			//sceneManager.addLight(light3);
+	
 			
 			// Load some more shaders
 		    normalShader = renderContext.makeShader();
@@ -327,10 +359,19 @@ public class simple4
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
 		    }
-	
+		    
+		    
 		    diffuseShader = renderContext.makeShader();
 		    try {
 		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }		
+
+		    threeLights = renderContext.makeShader();
+		    try {
+		    	threeLights.load("../jrtr/shaders/threeLights.vert", "../jrtr/shaders/threeLights.frag");
 		    } catch(Exception e) {
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
@@ -338,10 +379,10 @@ public class simple4
 
 		    // Make a material that can be used for shading
 			material = new Material();
-			material.shader = diffuseShader;
+			material.shader = threeLights;
 			material.diffuseMap = renderContext.makeTexture();
 			try {
-				material.diffuseMap.load("../textures/plant.jpg");
+				material.diffuseMap.load("../textures/wood.jpg");
 			} catch(Exception e) {				
 				System.out.print("Could not load texture.\n");
 				System.out.print(e.getMessage());
@@ -462,6 +503,13 @@ public class simple4
 
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
+			Light light1 = new Light();
+			light1.position= new Vector3f(1f,0f,1f);
+			sceneManager.addLight(light1);
+			
+			Light light2 = new Light();
+			light2.position= new Vector3f(-1f,0f,1f); 
+			sceneManager.addLight(light2);
 			
 			// Load some more shaders
 		    normalShader = renderContext.makeShader();
@@ -638,6 +686,10 @@ public class simple4
 		
 		switch(exerciseNr)
 		{
+			case 0:{
+				renderPanel = new CubeRenderPanel();
+				break;
+			}
 			case 1:{
 				renderPanel = new CylinderRenderPanel();
 				break;
@@ -648,10 +700,6 @@ public class simple4
 			}
 			case 3:{
 				renderPanel = new SceneRenderPanel();
-				break;
-			}
-			case 0:{
-				renderPanel = new CubeRenderPanel();
 				break;
 			}
 		}

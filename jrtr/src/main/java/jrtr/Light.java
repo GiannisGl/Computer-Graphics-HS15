@@ -24,6 +24,7 @@ public class Light {
 		spotDirection = new Vector3f(0.f,0.f,1.f);
 		spotExponent = 0.f;
 		spotCutoff = 180.f;
+		color = new Vector4f(1.f,1.f,1.f,1.f);
 	}
 
 	public Vector3f direction;
@@ -36,4 +37,5 @@ public class Light {
 	public float spotExponent;
 	public float spotCutoff;
 	public Type type;
+	public Vector4f color;
 }
