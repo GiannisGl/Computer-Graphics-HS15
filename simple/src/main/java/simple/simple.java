@@ -2,13 +2,11 @@ package simple;
 
 import jrtr.*;
 import jrtr.glrenderer.*;
-import jrtr.swrenderer.SWRenderPanel;
 
 import javax.swing.*;
 import java.awt.event.*;
 import javax.vecmath.*;
 
-import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -26,13 +24,13 @@ public class simple
 	static SimpleSceneManager sceneManager = new SimpleSceneManager();
 	static Shape shape, shape2, shape3, shape4;
 	static float currentstep, basicstep;
-	static int exerciseNr=5;
+	static int exerciseNr=1;
 
 	 /* An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
 	 * provide a call-back function for initialization. Here we construct
 	 * a simple 3D scene and start a timer task to generate an animation.
 	 */ 
-	public final static class SimpleRenderPanel extends SWRenderPanel
+	public final static class SimpleRenderPanel extends GLRenderPanel
 	{
 		/**
 		 * Initialization call-back. We initialize our renderer here.
@@ -148,7 +146,7 @@ public class simple
 			}
 	}
 		
-		public final static class CylinderRenderPanel extends SWRenderPanel
+		public final static class CylinderRenderPanel extends GLRenderPanel
 		{
 			/**
 			 * Initialization call-back. We initialize our renderer here.
@@ -158,7 +156,7 @@ public class simple
 			public final  void init(RenderContext r)
 			{
 				renderContext = r;
-				int segments = 23;
+				int segments = 20;
 				this.renderer(r,cylinder(segments));
 			}
 			
@@ -216,11 +214,29 @@ public class simple
 				c[6*segments+3+1]=0;
 				c[6*segments+3+2]=0;
 				
+				// Texture coordinates of the round faces
+				float[] t = new float[2*2*segments+2*2];
+				for(int i=0; i<segments; i++)
+				{
+					t[4*i]= (float) i/segments;
+					t[4*i+1]= (float) 1;
+					t[4*i+2]= (float) i/segments;
+					t[4*i+3]= (float) 0;	
+				}
+				
+				// Texture coordinates  of the top vertex
+				t[4*segments]= 0.5f;
+				t[4*segments+1]=0;
+							
+				// Texture coordinates  of the bottom vertex 
+				t[4*segments+2]=0.5f;
+				t[4*segments+2+1]=1;
 				
 				
 				VertexData vertexData = renderContext.makeVertexData(2*segments+2);
 				vertexData.addElement(c, VertexData.Semantic.COLOR, 3);
 				vertexData.addElement(v, VertexData.Semantic.POSITION, 3);
+				vertexData.addElement(t, VertexData.Semantic.TEXCOORD, 2);
 				
 				// The triangles (three vertex indices for each triangle)
 				int[] indices = new int[4*3*segments];
@@ -264,21 +280,46 @@ public class simple
 				
 				shape = cylinder;
 				// Add the object to the scene Manager
-				sceneManager.addShape(cylinder);
+				sceneManager.addShape(cylinder);				
 
+
+				// Load some more shaders
+			    normalShader = renderContext.makeShader();
+			    try {
+			    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+		
+			    diffuseShader = renderContext.makeShader();
+			    try {
+			    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+	
+			    // Make a material that can be used for shading
+				material = new Material();
+				material.shader = diffuseShader;
+				material.diffuseMap = renderContext.makeTexture();
+				try {
+					material.diffuseMap.load("../textures/plant.jpg");
+				} catch(Exception e) {				
+					System.out.print("Could not load texture.\n");
+					System.out.print(e.getMessage());
+				}
+	
 				// Add the scene to the renderer
 				renderContext.setSceneManager(sceneManager);
 								
-				// Register a timer task
-			    Timer timer = new Timer();
-			    basicstep = 0.01f;
-			    currentstep = basicstep;
-			    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
+				
 			}
 		
 		}
 		
-		public final static class TorusRenderPanel extends SWRenderPanel
+		public final static class TorusRenderPanel extends GLRenderPanel
 		{
 			/**
 			 * Initialization call-back. We initialize our renderer here.
@@ -622,11 +663,13 @@ public class simple
 		// Make a render panel. The init function of the renderPanel
 		// (see above) will be called back for initialization.
 		
+		/*
 		System.out.println("Which exercise?");
 		do{
 			exerciseNr = new Scanner(System.in).nextInt();
 		}
 		while(exerciseNr<0 && exerciseNr>3);
+		*/
 		 
 		switch(exerciseNr)
 		{
@@ -642,9 +685,10 @@ public class simple
 				renderPanel = new SceneRenderPanel();
 				break;
 			}
-			default:
+			default:{
 				renderPanel = new SimpleRenderPanel();
 				break;
+			}
 		}
 		
 		// Make the main window of this application and add the renderer to it
