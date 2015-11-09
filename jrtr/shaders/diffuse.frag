@@ -15,6 +15,7 @@ uniform int dLights;
 // Variables passed in from the vertex shader
 in float[MAX_LIGHTS] ndotPl;
 in float[MAX_LIGHTS] ndotDl;
+in float[MAX_LIGHTS] sqDistanceToPL;
 in vec2 frag_texcoord;
 
 // Output variable, will be written to framebuffer automatically
@@ -35,7 +36,7 @@ void main()
 	// For point Lights
 	for(int i=0; i<pLights; i++)
 	{
-		frag_shaded+= pointLight_colors[i]*ndotPl[i];
+		frag_shaded+= pointLight_colors[i]/sqDistanceToPL[i]*ndotPl[i];
 	}
 	
 	frag_shaded*=diffuse;
