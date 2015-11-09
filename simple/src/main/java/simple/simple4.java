@@ -21,8 +21,8 @@ public class simple4
 	static RenderContext renderContext;
 	static Shader normalShader;
 	static Shader diffuseShader;
-	static Shader threeLights;
-	static Material material;
+	static Shader colorDiffuseShader;
+	static Material material, material2, material3, materialC;
 	static SimpleSceneManager sceneManager = new SimpleSceneManager();
 	static Shape shape;
 	static int width=500;
@@ -337,18 +337,18 @@ public class simple4
 			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
 			sceneManager.addLight(light2);
 			
-			
+
 			Light light3 = new Light();
-			light3.direction= new Vector3f(0f,0f,1f);
-			light3.type=Type.DIRECTIONAL;
-			light3.color= new Vector4f(1.f,1.f,1.f,1.f);
-			//sceneManager.addLight(light3);
+			light3.position= new Vector3f(1f,0f,-3f);
+			light3.type=Type.POINT;
+			light3.color= new Vector4f(0.f,0.f,1.f,0.f);
+			sceneManager.addLight(light3);
 			
 			Light light4 = new Light();
-			light4.direction= new Vector3f(-1f,0f,2.f); 
-			light4.type=Type.DIRECTIONAL;
-			light4.color= new Vector4f(0.f,1.f,0.f,1.f);
-			//sceneManager.addLight(light4);
+			light4.position= new Vector3f(-1f,0f,-3.f); 
+			light4.type=Type.POINT;
+			light4.color= new Vector4f(1.f,0.f,0.f,1.f);
+			sceneManager.addLight(light4);
 
 			Light light5 = new Light();
 			light5.direction= new Vector3f(1.f,0.f,3f); 
@@ -365,8 +365,20 @@ public class simple4
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
 		    }
-		    
-		    
+
+		    colorDiffuseShader = renderContext.makeShader();
+		    try {
+		    	colorDiffuseShader.load("../jrtr/shaders/colorDiffuse.vert", "../jrtr/shaders/colorDiffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+
+		    // Make a material that can be used for shading
+			materialC = new Material();
+			materialC.shader = colorDiffuseShader;
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+		    		    
 		    diffuseShader = renderContext.makeShader();
 		    try {
 		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
@@ -505,25 +517,24 @@ public class simple4
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
 			
 
-			
+
 			Light light1 = new Light();
 			light1.position= new Vector3f(0f,0f, -5.f);
 			light1.type=Type.POINT;
-			light1.color= new Vector4f(1.f,1.f,1.f,100.f);
+			light1.color= new Vector4f(1.f,1.f,1.f,1.f);
 			sceneManager.addLight(light1);
 			
 			Light light2 = new Light();
-			light2.position= new Vector3f(0f, 0f, -8.5f); 
+			light2.position= new Vector3f(0f, 0f, -10f); 
 			light2.type=Type.POINT;
-			light2.color= new Vector4f(1.f,1.f,1.f,1.f);
-			//sceneManager.addLight(light2);
-			
+			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
+			sceneManager.addLight(light2);
 			
 			Light light3 = new Light();
-			light3.direction= new Vector3f(0f,0f,1f);
-			light3.type=Type.DIRECTIONAL;
-			light3.color= new Vector4f(1.f,1.f,1.f,0.f);
-			//sceneManager.addLight(light3);
+			light3.position= new Vector3f(0f, 2f, -10f); 
+			light3.type=Type.POINT;
+			light3.color= new Vector4f(1.f,1.f,1.f,1.f);
+			sceneManager.addLight(light3);
 			
 			Light light4 = new Light();
 			light4.direction= new Vector3f(-1f,0f,2.f); 
@@ -546,8 +557,20 @@ public class simple4
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
 		    }
-		    
-		    
+
+		    colorDiffuseShader = renderContext.makeShader();
+		    try {
+		    	colorDiffuseShader.load("../jrtr/shaders/colorDiffuse.vert", "../jrtr/shaders/colorDiffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+
+		    // Make a material that can be used for shading
+			material2 = new Material();
+			material2.shader = colorDiffuseShader;
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+		    		    
 		    diffuseShader = renderContext.makeShader();
 		    try {
 		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
@@ -631,17 +654,6 @@ public class simple4
 				light3.color= new Vector4f(0.f,0.f,1.f,1.f);
 				sceneManager.addLight(light3);
 				
-				Light light4 = new Light();
-				light4.direction= new Vector3f(-1f,0f,2.f); 
-				light4.type=Type.DIRECTIONAL;
-				light4.color= new Vector4f(0.f,1.f,0.f,1.f);
-				//sceneManager.addLight(light4);
-
-				Light light5 = new Light();
-				light5.direction= new Vector3f(1.f,0.f,3f); 
-				light5.type=Type.DIRECTIONAL;
-				light5.color= new Vector4f(0.f,0.f,1.f,1.f);
-				//sceneManager.addLight(light5);
 		
 				
 				// Load some more shaders
@@ -652,7 +664,19 @@ public class simple4
 			    	System.out.print("Problem with shader:\n");
 			    	System.out.print(e.getMessage());
 			    }
-			    
+
+			    colorDiffuseShader = renderContext.makeShader();
+			    try {
+			    	colorDiffuseShader.load("../jrtr/shaders/colorDiffuse.vert", "../jrtr/shaders/colorDiffuse.frag");
+			    } catch(Exception e) {
+			    	System.out.print("Problem with shader:\n");
+			    	System.out.print(e.getMessage());
+			    }
+
+			    // Make a material that can be used for shading
+				materialC = new Material();
+				materialC.shader = colorDiffuseShader;
+				//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
 			    
 			    diffuseShader = renderContext.makeShader();
 			    try {
@@ -668,7 +692,7 @@ public class simple4
 				material.diffuseMap = renderContext.makeTexture();
 				//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
 				try {
-					material.diffuseMap.load("../textures/plant.jpg");
+					material.diffuseMap.load("../textures/wood.jpg");
 				} catch(Exception e) {				
 					System.out.print("Could not load texture.\n");
 					System.out.print(e.getMessage());
@@ -705,6 +729,18 @@ public class simple4
 					// Remove material from shape, and set "default" shader
 					shape.setMaterial(null);
 					renderContext.useDefaultShader();
+					break;
+				}
+				case 'l': {
+					// Remove material from shape, and set "default" shader
+					if(shape.getMaterial() == null) {
+						shape.setMaterial(materialC);
+						renderContext.useShader(shape.getMaterial().shader);
+					} else
+					{
+						shape.setMaterial(null);
+						renderContext.useDefaultShader();
+					}
 					break;
 				}
 				case 'k': {
