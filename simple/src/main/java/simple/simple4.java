@@ -3,13 +3,12 @@ package simple;
 import jrtr.*;
 import jrtr.Light.Type;
 import jrtr.glrenderer.*;
-import simple.simple.CylinderRenderPanel;
 import simple.simple.SceneRenderPanel;
-import simple.simple.SimpleRenderPanel;
-import simple.simple.TorusRenderPanel;
 
 import javax.swing.*;
 import java.awt.event.*;
+import java.io.IOException;
+
 import javax.vecmath.*;
 
 
@@ -330,14 +329,14 @@ public class simple4
 			Light light1 = new Light();
 			light1.position= new Vector3f(0f,0f, -3.f);
 			light1.type=Type.POINT;
-			light1.color= new Vector4f(1.f,1.f,1.f,100.f);
+			light1.color= new Vector4f(1.f,1.f,1.f,1.f);
 			sceneManager.addLight(light1);
 			
 			Light light2 = new Light();
-			light2.position= new Vector3f(0f, 0f, -8.5f); 
+			light2.position= new Vector3f(0f, 0f, -7f); 
 			light2.type=Type.POINT;
 			light2.color= new Vector4f(1.f,1.f,1.f,1.f);
-			//sceneManager.addLight(light2);
+			sceneManager.addLight(light2);
 			
 			
 			Light light3 = new Light();
@@ -511,21 +510,21 @@ public class simple4
 			Light light1 = new Light();
 			light1.position= new Vector3f(0f,0f, -5.f);
 			light1.type=Type.POINT;
-			light1.color= new Vector4f(1.f,1.f,1.f,100.f);
+			light1.color= new Vector4f(1.f,1.f,1.f,1.f);
 			sceneManager.addLight(light1);
 			
 			Light light2 = new Light();
-			light2.position= new Vector3f(0f, 0f, -8.5f); 
+			light2.position= new Vector3f(0f, 0f, -10f); 
 			light2.type=Type.POINT;
-			light2.color= new Vector4f(1.f,1.f,1.f,1.f);
-			//sceneManager.addLight(light2);
-			
+			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
+			sceneManager.addLight(light2);
 			
 			Light light3 = new Light();
-			light3.direction= new Vector3f(0f,0f,1f);
-			light3.type=Type.DIRECTIONAL;
-			light3.color= new Vector4f(1.f,1.f,1.f,0.f);
-			//sceneManager.addLight(light3);
+			light3.position= new Vector3f(0f, 2f, -10f); 
+			light3.type=Type.POINT;
+			light3.color= new Vector4f(1.f,1.f,1.f,1.f);
+			sceneManager.addLight(light3);
+			
 			
 			Light light4 = new Light();
 			light4.direction= new Vector3f(-1f,0f,2.f); 
@@ -569,9 +568,100 @@ public class simple4
 				System.out.print("Could not load texture.\n");
 				System.out.print(e.getMessage());
 			}
+			
+			shape.setMaterial(material);
 		}
 	
 	}	
+	
+	public final static class ObjRenderPanel extends GLRenderPanel
+	{
+		/**
+		 * Initialization call-back. We initialize our renderer here.
+		 * 
+		 * @param r	the render context that is associated with this render panel
+		 */
+		public void init(RenderContext r)
+		{
+			renderContext = r;
+			VertexData vertexData = r.makeVertexData(0);
+			try{
+			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+			}
+			catch(IOException e1){
+				e1.printStackTrace();
+			}
+			
+			Shape shape1 = new Shape(vertexData);
+			this.renderer(r, shape1);			
+		}
+			
+					
+		public void renderer(RenderContext r, Shape shape1)
+		{
+			shape = shape1;
+			sceneManager.addShape(shape1);
+			
+			// Add the scene to the renderer
+			renderContext.setSceneManager(sceneManager);
+			
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,0f,5f));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
+			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+			
+			Light light1 = new Light();
+			light1.position= new Vector3f(0f,2f, -5.f);
+			light1.type=Type.POINT;
+			light1.color= new Vector4f(1.f,1.f,1.f,1.f);
+			sceneManager.addLight(light1);
+			
+			Light light2 = new Light();
+			light2.position= new Vector3f(0f, 1f, -3f); 
+			light2.type=Type.POINT;
+			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
+			sceneManager.addLight(light2);
+			
+			Light light3 = new Light();
+			light3.position= new Vector3f(-1f, 0f, -3f); 
+			light3.type=Type.POINT;
+			light3.color= new Vector4f(1.f,1.f,1.f,1.f);
+			sceneManager.addLight(light3);
+			
+			
+			// Load some more shaders
+		    normalShader = renderContext.makeShader();
+		    try {
+		    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+		    
+		    
+		    diffuseShader = renderContext.makeShader();
+		    try {
+		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }		
+
+		    // Make a material that can be used for shading
+			material = new Material();
+			material.shader = diffuseShader;
+			material.diffuseMap = renderContext.makeTexture();
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+			try {
+				material.diffuseMap.load("../textures/plant.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
+
+			shape.setMaterial(material);
+			
+		}
+	}
 	
 	/**
 	 * A key listener for the main window. Use this to process key events.
@@ -740,6 +830,10 @@ public class simple4
 				break;
 			}
 			case 3:{
+				renderPanel = new ObjRenderPanel();
+				break;
+			}
+			case 4:{
 				renderPanel = new SceneRenderPanel();
 				break;
 			}
