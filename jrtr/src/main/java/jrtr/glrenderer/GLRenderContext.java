@@ -308,10 +308,22 @@ public class GLRenderContext implements RenderContext {
 			if(idS!=-1)
 				gl.glUniform4f(idS, materialSpecular.x, materialSpecular.y, materialSpecular.z, 0.f);
 			
-			float phongParam = 2f;
+			// Set cameraCenter in shader
+			Vector3f camCenter = new Vector3f(sceneManager.getCamera().getCenterOfProjection());
+			int idCam = gl.glGetUniformLocation(activeShaderID, "cameraCenter");
+			if(idCam!=-1)
+				gl.glUniform4f(idCam , camCenter.x, camCenter.y, camCenter.z, 0);
+			else
+				System.out.println("Camera center not found");
+			
+			/*
+			float phongParam = 1.f;
 			int idP = gl.glGetUniformLocation(activeShaderID, "phongParam");
 			if(idP!=-1)
 				gl.glUniform1f(activeShaderID, phongParam);
+			else
+				System.out.println("phongParam not found");
+				*/
 			
 			// Activate the diffuse texture, if the material has one
 				// OpenGL calls to activate the texture 

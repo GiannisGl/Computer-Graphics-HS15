@@ -3,6 +3,7 @@
 // Fragment shader for diffuse shading in combination with a texture map
 
 #define MAX_LIGHTS 8
+#define PHONG_PARAM 8
 
 // Uniform variables passed in from host program
 uniform sampler2D myTexture;
@@ -15,7 +16,6 @@ uniform vec4[MAX_LIGHTS] directionalLight_colors;
 uniform int pLights;
 uniform int dLights;
 uniform vec4 cameraCenter;
-uniform float phongParam;
 
 // Variables passed in from the vertex shader
 in vec4 mVnormal4f;
@@ -38,18 +38,19 @@ void main()
 	// For directional Lights
 	for(int i=0; i<dLights; i++)
 	{
-		frag_shaded+= directionalLight_colors[i]*ndotDl[i]*materialDiffuse;
+		frag_shaded+= 0*directionalLight_colors[i]*ndotDl[i]*materialDiffuse;
 		reflextionDL[i]=2*ndotDl[i]*mVnormal4f-lightDirection[i];
-		frag_shaded+= directionalLight_colors[i]*pow(max(dot(reflextionDL[i],(cameraCenter-lightDirection[i])),0),phongParam)*materialSpecular;
+		frag_shaded+= directionalLight_colors[i]*pow(max(dot(reflextionDL[i],(cameraCenter-mVposition)),0),PHONG_PARAM)*materialSpecular;
 	}
 	
 	// The built-in GLSL function "texture" performs the texture lookup
 	// For point Lights
 	for(int i=0; i<pLights; i++)
 	{
-		frag_shaded+= pointLight_colors[i]/sqDistanceToPL[i]*ndotPl[i]*materialDiffuse;
-		reflextionPL[i]=2*ndotPl[i]*mVnormal4f-normalize(light_positions[i]-mVposition);
-		frag_shaded+= pointLight_colors[i]/sqDistanceToPL[i]*pow(max(dot(reflextionDL[i],(cameraCenter-(light_positions[i]-mVposition))),0),phongParam)*materialSpecular;
+		vec4 radiance = pointLight_colors[i]/sqDistanceToPL[i];
+		frag_shaded+= (radiance*ndotPl[i]*materialDiffuse);
+		reflextionPL[i]=normalize(2*ndotPl[i]*mVnormal4f-normalize(light_positions[i]-mVposition));
+		frag_shaded+= radiance*pow(max(dot(reflextionPL[i],normalize(cameraCenter-mVposition)),0),PHONG_PARAM)*materialSpecular;
 	}
 		
 	frag_shaded*=texture(myTexture,frag_texcoord);
