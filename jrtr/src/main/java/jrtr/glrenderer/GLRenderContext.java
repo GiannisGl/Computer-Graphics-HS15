@@ -298,10 +298,10 @@ public class GLRenderContext implements RenderContext {
 			// Activate the shader
 			useShader(m.shader);
 			
-			Vector3f diffuse = m.diffuse;
-			int idD = gl.glGetUniformLocation(activeShaderID, "diffuse");
+			Vector3f materialDiffuse = m.diffuse;
+			int idD = gl.glGetUniformLocation(activeShaderID, "materialDiffuse");
 			if(idD!=-1)
-				gl.glUniform4f(idD, diffuse.x, diffuse.y, diffuse.z, 0.f);
+				gl.glUniform4f(idD, materialDiffuse.x, materialDiffuse.y, materialDiffuse.z, 0.f);
 			
 			// Activate the diffuse texture, if the material has one
 				// OpenGL calls to activate the texture 
