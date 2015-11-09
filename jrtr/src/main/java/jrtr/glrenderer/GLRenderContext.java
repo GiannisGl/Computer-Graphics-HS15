@@ -303,6 +303,16 @@ public class GLRenderContext implements RenderContext {
 			if(idD!=-1)
 				gl.glUniform4f(idD, materialDiffuse.x, materialDiffuse.y, materialDiffuse.z, 0.f);
 			
+			Vector3f materialSpecular = m.specular;
+			int idS = gl.glGetUniformLocation(activeShaderID, "materialSpecular");
+			if(idS!=-1)
+				gl.glUniform4f(idS, materialSpecular.x, materialSpecular.y, materialSpecular.z, 0.f);
+			
+			float phongParam = 2f;
+			int idP = gl.glGetUniformLocation(activeShaderID, "phongParam");
+			if(idP!=-1)
+				gl.glUniform1f(activeShaderID, phongParam);
+			
 			// Activate the diffuse texture, if the material has one
 				// OpenGL calls to activate the texture 
 				gl.glActiveTexture(GL3.GL_TEXTURE0);	// Work with texture unit 0

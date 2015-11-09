@@ -3,10 +3,6 @@ package simple;
 import jrtr.*;
 import jrtr.Light.Type;
 import jrtr.glrenderer.*;
-import simple.simple.CylinderRenderPanel;
-import simple.simple.SceneRenderPanel;
-import simple.simple.SimpleRenderPanel;
-import simple.simple.TorusRenderPanel;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -226,11 +222,11 @@ public class simple4
 			for(int i=0; i<segments; i++)
 			{
 				n[6*i]=(float) Math.cos(2*Math.PI*i/segments);
-				n[6*i+1]=-1;
+				n[6*i+1]=0.5f;
 				n[6*i+2]=(float) Math.sin(2*Math.PI*i/segments);
 				
 				n[6*i+3]=(float) Math.cos(2*Math.PI*i/segments);
-				n[6*i+3+1]=1;
+				n[6*i+3+1]=0.5f;
 				n[6*i+3+2]=(float) Math.sin(2*Math.PI*i/segments);			
 			}
 			
@@ -319,26 +315,32 @@ public class simple4
 
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
+			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/3);
+					
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,0f,5f));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
+			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+			
 
 			
 			Light light1 = new Light();
-			light1.position= new Vector3f(0f,10f, -10.f);
+			light1.position= new Vector3f(0f,0f, -3.f);
 			light1.type=Type.POINT;
-			light1.color= new Vector4f(1.f,0.f,1.f,1.f);
-			sceneManager.addLight(light1);
+			light1.color= new Vector4f(1.f,1.f,1.f,100.f);
+			//sceneManager.addLight(light1);
 			
 			Light light2 = new Light();
-			light2.position= new Vector3f(0f,-10f,-10f); 
+			light2.position= new Vector3f(0f, 0f, -8.5f); 
 			light2.type=Type.POINT;
-			light2.color= new Vector4f(1.f,0.f,1.f,0.f);
-			sceneManager.addLight(light2);
+			light2.color= new Vector4f(1.f,1.f,1.f,1.f);
+			//sceneManager.addLight(light2);
 			
 			
 			Light light3 = new Light();
-			light3.direction= new Vector3f(3f,0f,3f);
+			light3.direction= new Vector3f(0f,0f,1f);
 			light3.type=Type.DIRECTIONAL;
-			light3.color= new Vector4f(0.f,0.f,1.f,0.f);
-			//sceneManager.addLight(light3);
+			light3.color= new Vector4f(1.f,1.f,1.f,0.f);
+			sceneManager.addLight(light3);
 			
 			Light light4 = new Light();
 			light4.direction= new Vector3f(-1f,0f,2.f); 
@@ -375,7 +377,7 @@ public class simple4
 			material = new Material();
 			material.shader = diffuseShader;
 			material.diffuseMap = renderContext.makeTexture();
-			material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
 			try {
 				material.diffuseMap.load("../textures/plant.jpg");
 			} catch(Exception e) {				
@@ -493,18 +495,46 @@ public class simple4
 			shape = torus;
 			// Add the object to the scene Manager
 			sceneManager.addShape(torus);
-			
-
-
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
+			
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,0f,10f));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
+			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+			
+
+			
 			Light light1 = new Light();
-			light1.position= new Vector3f(1f,0f,1f);
-			sceneManager.addLight(light1);
+			light1.position= new Vector3f(0f,0f, -5.f);
+			light1.type=Type.POINT;
+			light1.color= new Vector4f(1.f,1.f,1.f,100.f);
+			//sceneManager.addLight(light1);
 			
 			Light light2 = new Light();
-			light2.position= new Vector3f(-1f,0f,1f); 
-			sceneManager.addLight(light2);
+			light2.position= new Vector3f(0f, 0f, -8.5f); 
+			light2.type=Type.POINT;
+			light2.color= new Vector4f(1.f,1.f,1.f,1.f);
+			//sceneManager.addLight(light2);
+			
+			
+			Light light3 = new Light();
+			light3.direction= new Vector3f(0f,0f,1f);
+			light3.type=Type.DIRECTIONAL;
+			light3.color= new Vector4f(1.f,1.f,1.f,0.f);
+			sceneManager.addLight(light3);
+			
+			Light light4 = new Light();
+			light4.direction= new Vector3f(-1f,0f,2.f); 
+			light4.type=Type.DIRECTIONAL;
+			light4.color= new Vector4f(0.f,1.f,0.f,1.f);
+			//sceneManager.addLight(light4);
+
+			Light light5 = new Light();
+			light5.direction= new Vector3f(1.f,0.f,3f); 
+			light5.type=Type.DIRECTIONAL;
+			light5.color= new Vector4f(0.f,0.f,1.f,1.f);
+			//sceneManager.addLight(light5);
+	
 			
 			// Load some more shaders
 		    normalShader = renderContext.makeShader();
@@ -514,19 +544,21 @@ public class simple4
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
 		    }
-	
+		    
+		    
 		    diffuseShader = renderContext.makeShader();
 		    try {
 		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
 		    } catch(Exception e) {
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
-		    }
+		    }		
 
 		    // Make a material that can be used for shading
 			material = new Material();
 			material.shader = diffuseShader;
 			material.diffuseMap = renderContext.makeTexture();
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
 			try {
 				material.diffuseMap.load("../textures/plant.jpg");
 			} catch(Exception e) {				
@@ -704,7 +736,7 @@ public class simple4
 				break;
 			}
 			case 3:{
-				renderPanel = new SceneRenderPanel();
+				//renderPanel = new SceneRenderPanel();
 				break;
 			}
 		}

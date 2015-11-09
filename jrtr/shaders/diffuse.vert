@@ -20,10 +20,11 @@ in vec4 position;
 in vec2 texcoord;
 
 // Output variables for fragment shader
+out vec4 mVnormal4f;
+out vec4 mVposition;
 out float[MAX_LIGHTS] ndotPl;
 out float[MAX_LIGHTS] ndotDl;
-out vec4[MAX_LIGHTS] reflextionPL;
-out vec4[MAX_LIGHTS] reflextionDL;
+out float[MAX_LIGHTS] sqDistanceToPL;
 out vec2 frag_texcoord;
 
 void main()
@@ -36,7 +37,6 @@ void main()
 	for(int i=0; i<dLights; i++)
 	{
 		ndotDl[i]=max(dot(modelview*vec4(normal,0),lightDirection[i]),0);
-		reflextionDL[i]=2*ndotDL*normal-lightDirection[i];
 	}
 	
 	// Compute dot product of normal and point Light
@@ -46,7 +46,7 @@ void main()
 	for(int i=0; i<pLights; i++)
 	{
 		ndotPl[i]=max(dot(modelview*vec4(normal,0),normalize(light_positions[i]-modelview*position)),0);
-		reflextionPL[i]=2*ndotPL*normal-normalize(light_positions[i]-modelview*position);
+		sqDistanceToPL[i]=dot(light_positions[i]-modelview*position,light_positions[i]-modelview*position);
 	}
 
 	// Pass texture coordiantes to fragment shader, OpenGL automatically
@@ -57,4 +57,7 @@ void main()
 	// Note: gl_Position is a default output variable containing
 	// the transformed vertex position
 	gl_Position = projection * modelview * position;
+	
+	mVposition = modelview*position;
+	mVnormal4f = modelview*vec4(normal,0);
 }
