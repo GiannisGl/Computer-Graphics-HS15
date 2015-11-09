@@ -24,7 +24,7 @@ public class simple4
 	static Shader colorDiffuseShader;
 	static Material material, material2, material3, materialC;
 	static SimpleSceneManager sceneManager = new SimpleSceneManager();
-	static Shape shape;
+	static Shape shape, shape2, shape3, shape4;
 	static int width=500;
 	static int height=500;
 	static boolean withObj=true;
@@ -35,7 +35,7 @@ public class simple4
 	static Vector3f axis = new Vector3f();
 	static float theta;
 	static Camera camera = sceneManager.getCamera();
-	static int exerciseNr=3;
+	static int exerciseNr=4;
 	
 	public final static class CubeRenderPanel extends GLRenderPanel
 	{
@@ -606,7 +606,7 @@ public class simple4
 			renderContext = r;
 			VertexData vertexData = r.makeVertexData(0);
 			try{
-			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot_texcoords.obj",1f,r);
 			}
 			catch(IOException e1){
 				e1.printStackTrace();
@@ -642,7 +642,7 @@ public class simple4
 				sceneManager.addLight(light1);
 				
 				Light light2 = new Light();
-				light2.position= new Vector3f(1f, 0f, -2f); 
+				light2.position= new Vector3f(2f, 0f, -2f); 
 				light2.type=Type.POINT;
 				light2.color= new Vector4f(1.f,1.f,1.f,1.f);
 				sceneManager.addLight(light2);
@@ -699,6 +699,151 @@ public class simple4
 				}
 			}
 	}
+	
+
+	public final static class SceneRenderPanel extends GLRenderPanel
+	{
+		/**
+		 * Initialization call-back. We initialize our renderer here.
+		 * 
+		 * @param r	the render context that is associated with this render panel
+		 */
+		public final void init(RenderContext r)
+		{
+			renderContext = r;
+			// shape1, inner torus
+			shape = TorusRenderPanel.torus(10 , 10, 4, 1);
+    				
+    		// shape2, obj
+			VertexData vertexData = r.makeVertexData(0);
+			try{
+			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+			}
+			catch(IOException e1){
+				e1.printStackTrace();
+			}
+			
+			shape2 = new Shape(vertexData);
+    		Matrix4f t = shape2.getTransformation();
+			Matrix4f trans = new Matrix4f();
+    		Vector3f vector = new Vector3f(0f, 0f, 2f);
+    		trans.setTranslation(vector);
+    		t.add(trans);
+    		shape2.setTransformation(t);
+			
+			// shape3,  cylinder
+			shape3 = CylinderRenderPanel.cylinder(10);
+    		
+    		
+
+			Shape[] shapes = {shape, shape2, shape3};
+			renderer(r, shapes);
+		}
+		
+		public void renderer(RenderContext r, Shape[] shapes)
+		{
+			for(Shape shape: shapes)
+			{
+				sceneManager.addShape(shape);
+			}
+	
+			// Add the scene to the renderer
+			renderContext.setSceneManager(sceneManager);
+			
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,10f));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
+			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+			
+			Light light1 = new Light();
+			light1.position= new Vector3f(0f,2f, -10.f);
+			light1.type=Type.POINT;
+			light1.color= new Vector4f(1.f,0.f,0.f,1.f);
+			sceneManager.addLight(light1);
+			
+			Light light2 = new Light();
+			light2.position= new Vector3f(2f, 2f, -8f); 
+			light2.type=Type.POINT;
+			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
+			sceneManager.addLight(light2);
+			
+			Light light3 = new Light();
+			light3.position= new Vector3f(-2f, 0f, -8f); 
+			light3.type=Type.POINT;
+			light3.color= new Vector4f(1.f,1.f,1.f,1.f);
+			sceneManager.addLight(light3);
+
+			Light light4 = new Light();
+			light4.position= new Vector3f(0f, 1f, -2f); 
+			light4.type=Type.POINT;
+			light4.color= new Vector4f(1.f,1.f,1.f,1.f);
+			sceneManager.addLight(light4);
+			
+			
+			// Load some more shaders
+		    normalShader = renderContext.makeShader();
+		    try {
+		    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+
+		    colorDiffuseShader = renderContext.makeShader();
+		    try {
+		    	colorDiffuseShader.load("../jrtr/shaders/colorDiffuse.vert", "../jrtr/shaders/colorDiffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+
+		    // Make a material that can be used for shading
+			materialC = new Material();
+			materialC.shader = colorDiffuseShader;
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+		    
+		    
+		    diffuseShader = renderContext.makeShader();
+		    try {
+		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }		
+
+		    // Make a material that can be used for shading
+			material = new Material();
+			material.shader = diffuseShader;
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+			material.diffuseMap = renderContext.makeTexture();
+			try {
+				material.diffuseMap.load("../textures/plant.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
+			
+			// Make a material that can be used for shading
+			material2 = new Material();
+			material2.shader = diffuseShader;
+			//material2.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+			
+
+			// Make a material that can be used for shading
+			material3 = new Material();
+			material3.shader = diffuseShader;
+			material3.diffuseMap = renderContext.makeTexture();
+			//material3.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+			try {
+				material3.diffuseMap.load("../textures/wood.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
+			
+					
+		}
+	}
+	
 	
 	/**
 	 * A key listener for the main window. Use this to process key events.
@@ -762,6 +907,26 @@ public class simple4
 					{
 						shape.setMaterial(null);
 						renderContext.useDefaultShader();
+					}
+
+					if(exerciseNr==4){
+						// Set a material for more complex shading of the shape
+						if(shape2.getMaterial() == null) {
+							shape2.setMaterial(material2);
+							renderContext.useShader(shape2.getMaterial().shader);
+						} else
+						{
+							shape2.setMaterial(null);
+							renderContext.useDefaultShader();
+						}// Set a material for more complex shading of the shape
+						if(shape3.getMaterial() == null) {
+							shape3.setMaterial(material3);
+							renderContext.useShader(shape3.getMaterial().shader);
+						} else
+						{
+							shape3.setMaterial(null);
+							renderContext.useDefaultShader();
+						}
 					}
 					break;
 				}
@@ -840,7 +1005,12 @@ public class simple4
 	            rot.set(axisAngle);
 	            
 	            shape.getTransformation().mul(rot, shape.getTransformation());
-	            
+
+	            if(exerciseNr==4){
+		            shape2.getTransformation().mul(rot, shape2.getTransformation());
+		
+		            shape3.getTransformation().mul(rot, shape3.getTransformation());
+	            }
 	            p1=new Vector3f(p2);
     		}
 			
@@ -882,7 +1052,7 @@ public class simple4
 				renderPanel = new objRenderPanel();
 			}
 			case 4:{
-				//renderPanel = new SceneRenderPanel();
+				renderPanel = new SceneRenderPanel();
 				break;
 			}
 		}
