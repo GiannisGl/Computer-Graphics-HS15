@@ -35,7 +35,7 @@ public class simple4
 	static Vector3f axis = new Vector3f();
 	static float theta;
 	static Camera camera = sceneManager.getCamera();
-	static int exerciseNr=4;
+	static int exerciseNr=2;
 	
 	public final static class CubeRenderPanel extends GLRenderPanel
 	{
@@ -573,7 +573,7 @@ public class simple4
 		    		    
 		    diffuseShader = renderContext.makeShader();
 		    try {
-		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+		    	diffuseShader.load("../jrtr/shaders/stripesShader.vert", "../jrtr/shaders/stripesShader.frag");
 		    } catch(Exception e) {
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
@@ -606,7 +606,7 @@ public class simple4
 			renderContext = r;
 			VertexData vertexData = r.makeVertexData(0);
 			try{
-			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot_texcoords.obj",1f,r);
+			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
 			}
 			catch(IOException e1){
 				e1.printStackTrace();
@@ -680,7 +680,7 @@ public class simple4
 			    
 			    diffuseShader = renderContext.makeShader();
 			    try {
-			    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+			    	diffuseShader.load("../jrtr/shaders/stripesShader.vert", "../jrtr/shaders/stripesShader.frag");
 			    } catch(Exception e) {
 			    	System.out.print("Problem with shader:\n");
 			    	System.out.print(e.getMessage());
@@ -1050,6 +1050,7 @@ public class simple4
 			}
 			case 3:{
 				renderPanel = new objRenderPanel();
+				break;
 			}
 			case 4:{
 				renderPanel = new SceneRenderPanel();

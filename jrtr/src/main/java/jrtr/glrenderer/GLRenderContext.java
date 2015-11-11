@@ -290,14 +290,17 @@ public class GLRenderContext implements RenderContext {
 			
 			// Identifier for shader variables
 			int id;
+			/*
 			int pLights=0; // number of point Lights
 			int dLights=0; // number of directional Lights
 			String lightString;
 			String lightColor;
+			*/
 			
 			// Activate the shader
 			useShader(m.shader);
 			
+			/*
 			Vector3f materialDiffuse = m.diffuse;
 			int idD = gl.glGetUniformLocation(activeShaderID, "materialDiffuse");
 			if(idD!=-1)
@@ -315,15 +318,7 @@ public class GLRenderContext implements RenderContext {
 				gl.glUniform4f(idCam , camCenter.x, camCenter.y, camCenter.z, 0);
 			else
 				System.out.println("Camera center not found");
-			
-			/*
-			float phongParam = 1.f;
-			int idP = gl.glGetUniformLocation(activeShaderID, "phongParam");
-			if(idP!=-1)
-				gl.glUniform1f(activeShaderID, phongParam);
-			else
-				System.out.println("phongParam not found");
-				*/
+			*/
 			
 			// Activate the diffuse texture, if the material has one
 				// OpenGL calls to activate the texture 
@@ -349,6 +344,7 @@ public class GLRenderContext implements RenderContext {
 				id = gl.glGetUniformLocation(activeShaderID, "myTexture");
 				gl.glUniform1i(id, 0);	// The variable in the shader needs to be set to the desired texture unit, i.e., 0
 			
+			/*
 			// Pass a default light source direction to shader
 			lightString = "lightDirection[" + 0 + "]";			
 			id = gl.glGetUniformLocation(activeShaderID, lightString);
@@ -436,6 +432,7 @@ public class GLRenderContext implements RenderContext {
 				gl.glUniform1i(id, dLights);		// Set number of lights			
 			else
 				System.out.print("Could not get location of uniform variable dLights\n");
+			*/
 		}
 	}
 
