@@ -12,8 +12,9 @@ out vec4 frag_shaded;
 
 void main()
 {		
-	float modDistance = 0.1f;
-	float distance = length(frag_position);
+	float modDistance = 0.05f;
+	vec2 planarPosition = vec2(frag_position.x, frag_position.z);
+	float distance = length(planarPosition);
 	float index = mod(distance,3*modDistance);
 	
 	if(index<modDistance)
