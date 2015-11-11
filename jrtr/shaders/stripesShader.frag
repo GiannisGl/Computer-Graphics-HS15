@@ -6,28 +6,41 @@
 
 // Variables passed in from the vertex shader
 in vec4 frag_position;
+in vec2 frag_texcoord;
 
 // Output variable, will be written to framebuffer automatically
 out vec4 frag_shaded;
 
 void main()
-{		
-	float modDistance = 0.05f;
-	vec2 planarPosition = vec2(frag_position.x, frag_position.z);
-	float distance = length(planarPosition);
-	float index = mod(distance,3*modDistance);
+{
+	float row, col;
+	float s = frag_texcoord.x;
+	float t = frag_texcoord.y;
 	
-	if(index<modDistance)
+	float stride = 1;
+	float size = 10;
+	
+	row = floor(t*size);
+	col = floor(s*size);
+	
+	float superRow = row/stride;
+	float superCol = col/stride;
+	//float sum= superRow+superCol;
+	float sum = superRow;
+	
+	float index =  mod(sum, 3);
+	
+	if(index<0.5f)
 	{
 		frag_shaded = vec4(1.0, 0.0, 0.0, 1.0);
 	}
-	else if(index>=modDistance && index <2*modDistance)
+	else if(index<=1.5f)
 	{
 		frag_shaded = vec4(0.0, 0.0, 1.0, 1.0);
 	}
-	else
+	else if(index<=2.5f)
 	{
-		frag_shaded = vec4(1.0, 1.0, 0.0, 1.0);
+		frag_shaded = vec4(0.0, 1.0, 0.0, 1.0);
 	}
 }
 

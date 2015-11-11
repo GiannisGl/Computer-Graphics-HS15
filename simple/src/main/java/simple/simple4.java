@@ -606,7 +606,7 @@ public class simple4
 			renderContext = r;
 			VertexData vertexData = r.makeVertexData(0);
 			try{
-			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot_texcoords.obj",1f,r);
 			}
 			catch(IOException e1){
 				e1.printStackTrace();
@@ -717,7 +717,7 @@ public class simple4
     		// shape2, obj
 			VertexData vertexData = r.makeVertexData(0);
 			try{
-			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot.obj",1f,r);
+			vertexData = ObjReader.read("C:\\Users\\Giannis\\Computer-Graphics\\Computergrafik-Basecode\\obj\\teapot_texcoords.obj",1f,r);
 			}
 			catch(IOException e1){
 				e1.printStackTrace();
@@ -732,7 +732,7 @@ public class simple4
     		shape2.setTransformation(t);
 			
 			// shape3,  cylinder
-			shape3 = CylinderRenderPanel.cylinder(10);
+			shape3 = CylinderRenderPanel.cylinder(20);
     		
     		
 
