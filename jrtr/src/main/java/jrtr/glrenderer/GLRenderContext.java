@@ -308,13 +308,6 @@ public class GLRenderContext implements RenderContext {
 			if(idS!=-1)
 				gl.glUniform4f(idS, materialSpecular.x, materialSpecular.y, materialSpecular.z, 0.f);
 			
-			// Set cameraCenter in shader
-			Vector3f camCenter = new Vector3f(sceneManager.getCamera().getCenterOfProjection());
-			int idCam = gl.glGetUniformLocation(activeShaderID, "cameraCenter");
-			if(idCam!=-1)
-				gl.glUniform4f(idCam , camCenter.x, camCenter.y, camCenter.z, 0);
-			else
-				System.out.println("Camera center not found");
 			
 			/*
 			float phongParam = 1.f;

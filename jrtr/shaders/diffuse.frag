@@ -15,7 +15,6 @@ uniform vec4[MAX_LIGHTS] pointLight_colors;
 uniform vec4[MAX_LIGHTS] directionalLight_colors;
 uniform int pLights;
 uniform int dLights;
-uniform vec4 cameraCenter;
 
 // Variables passed in from the vertex shader
 in vec4 mVnormal4f;
@@ -40,7 +39,7 @@ void main()
 	{
 		frag_shaded+= 0*directionalLight_colors[i]*ndotDl[i]*materialDiffuse;
 		reflextionDL[i]=2*ndotDl[i]*mVnormal4f-lightDirection[i];
-		frag_shaded+= directionalLight_colors[i]*pow(max(dot(reflextionDL[i],(cameraCenter-mVposition)),0),PHONG_PARAM)*materialSpecular;
+		frag_shaded+= directionalLight_colors[i]*pow(max(dot(reflextionDL[i],(-mVposition)),0),PHONG_PARAM)*materialSpecular;
 	}
 	
 	// The built-in GLSL function "texture" performs the texture lookup
@@ -50,7 +49,7 @@ void main()
 		vec4 radiance = pointLight_colors[i]/sqDistanceToPL[i];
 		frag_shaded+= (radiance*ndotPl[i]*materialDiffuse);
 		reflextionPL[i]=normalize(2*ndotPl[i]*mVnormal4f-normalize(light_positions[i]-mVposition));
-		frag_shaded+= radiance*pow(max(dot(reflextionPL[i],normalize(cameraCenter-mVposition)),0),PHONG_PARAM)*materialSpecular;
+		frag_shaded+= radiance*pow(max(dot(reflextionPL[i],normalize(-mVposition)),0),PHONG_PARAM)*materialSpecular;
 	}
 		
 	frag_shaded*=texture(myTexture,frag_texcoord);
