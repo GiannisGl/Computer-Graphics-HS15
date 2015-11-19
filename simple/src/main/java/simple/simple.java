@@ -24,7 +24,7 @@ public class simple
 	static SimpleSceneManager sceneManager = new SimpleSceneManager();
 	static Shape shape, shape2, shape3, shape4;
 	static float currentstep, basicstep;
-	static int exerciseNr=1;
+	static int exerciseNr=2;
 
 	 /* An extension of {@link GLRenderPanel} or {@link SWRenderPanel} to 
 	 * provide a call-back function for initialization. Here we construct
@@ -331,7 +331,7 @@ public class simple
 				renderContext = r;
 				int segments = 10;
 				int hSegments = 10;
-				int centralRadius = 3;
+				int centralRadius = 0;
 				float radius = 1f;
 				this.renderer(r, torus(segments, hSegments, centralRadius, radius));
 			}
