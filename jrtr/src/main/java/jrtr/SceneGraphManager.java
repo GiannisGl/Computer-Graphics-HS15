@@ -86,7 +86,7 @@ public class SceneGraphManager implements SceneManagerInterface{
 			
 
 			current = nodeStack.pop();
-			currentMatrix = current.getTransformationMatrix();
+			currentMatrix = new Matrix4f(current.getTransformationMatrix());
 			parentMatrix = matrixStack.pop();
 			currentMatrix.mul(parentMatrix,currentMatrix);
 			
@@ -100,28 +100,12 @@ public class SceneGraphManager implements SceneManagerInterface{
 					matrixStack.push(currentMatrix);
 				}
 				current = nodeStack.pop();
-				currentMatrix = current.getTransformationMatrix();
+				currentMatrix = new Matrix4f(current.getTransformationMatrix());
 				parentMatrix = matrixStack.pop();
 				currentMatrix.mul(parentMatrix,currentMatrix);
 			}
 			
-			/*
-			do{
-				current = nodeStack.pop();
-				currentMatrix = current.getTransformationMatrix();
-				parentMatrix = matrixStack.pop();
-				currentMatrix.mul(parentMatrix,currentMatrix);
-				ListIterator<Node> childrenItr = current.getChildren().listIterator();
-				while(childrenItr.hasNext())
-				{
-					Node currentChild = childrenItr.next();
-					nodeStack.push(currentChild);
-					matrixStack.push(currentMatrix);
-				}
-			}
-			while(nodeStack.peek().getChildren()!=null);
-			*/
-			return new RenderItem(current.getShape(), currentMatrix);
+			return new RenderItem(current.getShape(), new Matrix4f(currentMatrix));
 			
 		}
 		

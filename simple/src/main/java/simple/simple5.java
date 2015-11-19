@@ -3,6 +3,9 @@ package simple;
 import jrtr.*;
 import jrtr.Light.Type;
 import jrtr.glrenderer.*;
+import simple.VirtualTrackball.PointToSphere;
+import simple.VirtualTrackball.TrackBallMouseListener;
+import simple.VirtualTrackball.TrackBallMouseMotionListener;
 import simple.simple.AnimationTask;
 
 import javax.swing.*;
@@ -32,6 +35,11 @@ public class simple5
 	static int width=500;
 	static int height=500;
 	static int radius=Math.min(width,height);
+	static Vector3f p1;
+	static Vector3f p2;
+	static int isIn=0;
+	static Vector3f axis = new Vector3f();
+	static float theta;
 	static boolean withMaterial=false;
 	static TransformGroup root;
 			
@@ -238,7 +246,7 @@ public class simple5
 		return cylinder;
 	}
 	
-	public static final Shape torus(int segments, int hSegments, int centralRadius, float radius)
+	public static final Shape torus(int segments, int hSegments, float centralRadius, float radius)
 	{			
 		
 		// Make a simple geometric object: a torus
@@ -331,8 +339,8 @@ public class simple5
 		{
 			renderContext = r;
 			
-			head = torus(40 , 40, 4, 1);
-			leg = cylinder(20, 2, 1);
+			head = torus(40 , 40, 0, 1);
+			leg = cylinder(20, 1, 3);
     		arm = cylinder(20, 1, 1);
 			body = cube();
 			Matrix4f bodyM = new Matrix4f();
@@ -347,7 +355,7 @@ public class simple5
 		{
 			root = makeRobot();
 			sceneManager = new SceneGraphManager(root);
-			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/3);
+			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/2);
 			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,40f));
 			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
@@ -398,7 +406,7 @@ public class simple5
 		    Timer timer = new Timer();
 		    basicstep = 0.01f;
 		    currentstep = basicstep;
-		    //timer.scheduleAtFixedRate(new AnimationTask(), 1, 10);
+		    timer.scheduleAtFixedRate(new AnimationTask(), 0, 10);
 		}
 		
 		public TransformGroup makeRobot(){
@@ -406,7 +414,7 @@ public class simple5
 			TransformGroup bodyTransform = new TransformGroup();
 			Matrix4f bodyM = new Matrix4f();
 			bodyM.setIdentity();
-			bodyM.setTranslation(new Vector3f(5,0,0));
+			bodyM.setTranslation(new Vector3f(10,0,0));
 			bodyTransform.setTransformationMatrix(bodyM);
 			
 			ShapeNode bodyNode = new ShapeNode();
@@ -417,7 +425,7 @@ public class simple5
 			TransformGroup leftLegTransform = new TransformGroup();
 			Matrix4f leftLegM = new Matrix4f();
 			leftLegM.setIdentity();
-			leftLegM.setTranslation(new Vector3f(-1,-1,0));
+			leftLegM.setTranslation(new Vector3f(-3.5f,-7f,0));
 			leftLegTransform.setTransformationMatrix(leftLegM);
 			bodyTransform.addChild(leftLegTransform);
 			
@@ -439,19 +447,98 @@ public class simple5
 	{
 		public void run()
 		{
-		
-			// Update transformation by rotating with angle "currentstep"
-    		Matrix4f t = root.getTransformationMatrix();
+			Matrix4f t = root.getTransformationMatrix();
     		Matrix4f rotY = new Matrix4f();
     		rotY.rotY(currentstep);
-    		t.mul(rotY,t);	
+    		t.mul(rotY, t);    		
     		root.setTransformationMatrix(t);
+
+			Matrix4f tleg = leg.getTransformation();
+    		Matrix4f rotX = new Matrix4f();
+    		rotX.rotX(currentstep);
+    		tleg.mul(rotX, tleg);    		
+    		leg.setTransformation(tleg);
     		
 			// Trigger redrawing of the render window
 			renderPanel.getCanvas().repaint(); 
 		}
 	}
 
+	public static class PointToSphere
+	{
+		public static Vector3f getVectorFromPoint(MouseEvent e)
+		{
+			int width = renderPanel.getCanvas().getWidth();
+	        int height = renderPanel.getCanvas().getHeight();
+			int x = e.getX();
+            int y = e.getY();
+            float x3D = (float) x/((float) radius/2);
+            float y3D = (float) y/((float) radius/2);
+            x3D=x3D-(float) width/radius;
+            y3D= (float)height/radius-y3D;
+            float z = 1-x3D*x3D-y3D*y3D;
+            float z3D = z>0? (float) Math.sqrt(z):0.1f;
+            Vector3f v = new Vector3f(x3D,y3D,z3D);
+            v.normalize();
+            return v;
+		}
+	}
+	
+	public static class TrackBallMouseListener implements MouseListener
+	{
+		@Override
+    	public void mousePressed(MouseEvent e) {
+			
+    		if(isIn==1)
+    		{
+	    		p1=PointToSphere.getVectorFromPoint(e);
+    		}
+    		
+    	}
+    	@Override
+    	public void mouseReleased(MouseEvent e) {}
+    	@Override
+    	public void mouseEntered(MouseEvent e) {isIn=1;}
+    	@Override
+    	public void mouseExited(MouseEvent e) {isIn=0;}
+    	public void mouseClicked(MouseEvent e) {}
+	}
+	
+	/**
+	 * A mouse listener for the main window of this application. This can be
+	 * used to process mouse events.
+	 */
+	public static class TrackBallMouseMotionListener implements MouseMotionListener
+	{		
+		
+		@Override
+		public void mouseDragged(MouseEvent e) {
+
+    		
+			if(isIn==1)
+    		{
+				p2=PointToSphere.getVectorFromPoint(e);
+	            
+	            axis.cross(p1, p2);
+	            theta = (float) (p1.angle(p2))/10;
+	            
+	            Matrix4f rot = new Matrix4f();
+	            AxisAngle4f axisAngle = new AxisAngle4f(axis, theta);
+	            rot.set(axisAngle);
+	            
+	            root.getTransformationMatrix().mul(rot, root.getTransformationMatrix());
+	            
+	            p1=new Vector3f(p2);
+    		}
+			
+
+			// Trigger redrawing
+			renderPanel.getCanvas().repaint();
+		}
+		@Override
+		public void mouseMoved(MouseEvent e) {}
+
+	}
 	/**
 	 * A mouse listener for the main window of this application. This can be
 	 * used to process mouse events.
@@ -532,7 +619,8 @@ public class simple5
 		jframe.getContentPane().add(renderPanel.getCanvas());// put the canvas into a JFrame window
 
 		// Add a mouse and key listener
-	    renderPanel.getCanvas().addMouseListener(new SimpleMouseListener());
+	    //renderPanel.getCanvas().addMouseListener(new TrackBallMouseListener());
+	   // renderPanel.getCanvas().addMouseMotionListener(new TrackBallMouseMotionListener());
 	    renderPanel.getCanvas().addKeyListener(new SimpleKeyListener());
 		renderPanel.getCanvas().setFocusable(true);   	    	    
 	      	    
