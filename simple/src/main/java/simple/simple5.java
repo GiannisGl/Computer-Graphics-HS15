@@ -30,7 +30,7 @@ public class simple5
 	static Shader colorDiffuseShader;
 	static Material material, material2, material3, materialC;
 	static SceneGraphManager sceneManager;
-	static Shape body, leg, arm, head;
+	static Shape body, leg, arm, head, joint;
 	static float currentstep, basicstep;
 	static int width=500;
 	static int height=500;
@@ -41,7 +41,7 @@ public class simple5
 	static Vector3f axis = new Vector3f();
 	static float theta;
 	static boolean withMaterial=false;
-	static TransformGroup root;
+	static TransformGroup root, leftLegJointTransform, leftLegTransform, rightLegJointTransform, rightLegTransform;
 			
 	// Make a simple geometric object: a cube
 	public final static Shape cube()
@@ -340,13 +340,14 @@ public class simple5
 			renderContext = r;
 			
 			head = torus(40 , 40, 0, 1);
-			leg = cylinder(20, 1, 3);
+			leg = cylinder(20, 0.5f, 3);
     		arm = cylinder(20, 1, 1);
 			body = cube();
 			Matrix4f bodyM = new Matrix4f();
 			bodyM.setIdentity();
 			bodyM.setScale(4);
 			body.setTransformation(bodyM);
+			joint = torus(20, 20, 0, 0.5f);
 			
 			renderer(r);
 		}
@@ -356,7 +357,7 @@ public class simple5
 			root = makeRobot();
 			sceneManager = new SceneGraphManager(root);
 			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/2);
-			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,40f));
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,20f));
 			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
 			
@@ -420,20 +421,77 @@ public class simple5
 			ShapeNode bodyNode = new ShapeNode();
 			bodyNode.setShape(body);
 			bodyTransform.addChild(bodyNode);
+
+			ShapeNode legNode = new ShapeNode();
+			legNode.setShape(leg);
+
+			ShapeNode legJointNode = new ShapeNode();
+			legJointNode.setShape(joint);
 			
+			leftLegJointTransform = new TransformGroup();
+			Matrix4f leftLegJointM = new Matrix4f();
+			leftLegJointM.setIdentity();
+			leftLegJointM.setTranslation(new Vector3f(-3.5f,-4.5f,0));
+			leftLegJointTransform.setTransformationMatrix(leftLegJointM);
 			
-			TransformGroup leftLegTransform = new TransformGroup();
+			leftLegJointTransform.addChild(legJointNode);
+			
+			leftLegTransform = new TransformGroup();
 			Matrix4f leftLegM = new Matrix4f();
 			leftLegM.setIdentity();
-			leftLegM.setTranslation(new Vector3f(-3.5f,-7f,0));
+			leftLegM.setTranslation(new Vector3f(0,-3.5f,0));
 			leftLegTransform.setTransformationMatrix(leftLegM);
-			bodyTransform.addChild(leftLegTransform);
+			leftLegJointTransform.addChild(leftLegTransform);
 			
-			ShapeNode leftLeg = new ShapeNode();
-			leftLeg.setShape(leg);
-			leftLegTransform.addChild(leftLeg);
-				
+			leftLegTransform.addChild(legNode);
+			bodyTransform.addChild(leftLegJointTransform);
+			
+			rightLegJointTransform = new TransformGroup();
+			Matrix4f rightLegJointM = new Matrix4f();
+			rightLegJointM.setIdentity();
+			rightLegJointM.setTranslation(new Vector3f(3.5f, -4.5f, 0));
+			rightLegJointTransform.setTransformationMatrix(rightLegJointM);
+			
+			rightLegJointTransform.addChild(legJointNode);
+			
+			rightLegTransform = new TransformGroup();
+			Matrix4f rightLegM = new Matrix4f();
+			rightLegM.setIdentity();
+			rightLegM.setTranslation(new Vector3f(0,-3.5f,0));
+			rightLegTransform.setTransformationMatrix(rightLegM);
+			rightLegJointTransform.addChild(rightLegTransform);
+			
+			rightLegTransform.addChild(legNode);
+			bodyTransform.addChild(rightLegJointTransform);
+			
 			return bodyTransform;
+		}
+		
+		public TransformGroup makeLeg(Vector3f translation)
+		{
+			TransformGroup legJointTransform = new TransformGroup();
+			Matrix4f legJointM = new Matrix4f();
+			legJointM.setIdentity();
+			legJointM.setTranslation(translation);
+			legJointTransform.setTransformationMatrix(legJointM);
+			
+			ShapeNode legJointNode = new ShapeNode();
+			legJointNode.setShape(joint);
+			legJointTransform.addChild(legJointNode);
+			
+			TransformGroup legTransform = new TransformGroup();
+			Matrix4f legM 
+			= new Matrix4f();
+			legM.setIdentity();
+			legM.setTranslation(new Vector3f(0,-3.5f,0));
+			legTransform.setTransformationMatrix(legM);
+			legJointTransform.addChild(legTransform);
+			
+			ShapeNode legNode = new ShapeNode();
+			legNode.setShape(leg);
+			legTransform.addChild(legNode);
+				
+			return legJointTransform;
 		}
 	}
 	
@@ -447,17 +505,21 @@ public class simple5
 	{
 		public void run()
 		{
-			Matrix4f t = root.getTransformationMatrix();
     		Matrix4f rotY = new Matrix4f();
     		rotY.rotY(currentstep);
+    		
+    		long time = this.scheduledExecutionTime();
+    		Matrix4f rotX = new Matrix4f();
+    		rotX.rotX(currentstep*(float) Math.cos(time));
+			
+			
+			Matrix4f t = root.getTransformationMatrix();
     		t.mul(rotY, t);    		
     		root.setTransformationMatrix(t);
 
-			Matrix4f tleg = leg.getTransformation();
-    		Matrix4f rotX = new Matrix4f();
-    		rotX.rotX(currentstep);
-    		tleg.mul(rotX, tleg);    		
-    		leg.setTransformation(tleg);
+			Matrix4f leftLegM = leftLegTransform.getTransformationMatrix();
+    		leftLegM.mul(rotX, leftLegM);    		
+    		leftLegTransform.setTransformationMatrix(leftLegM);
     		
 			// Trigger redrawing of the render window
 			renderPanel.getCanvas().repaint(); 
@@ -520,7 +582,7 @@ public class simple5
 				p2=PointToSphere.getVectorFromPoint(e);
 	            
 	            axis.cross(p1, p2);
-	            theta = (float) (p1.angle(p2))/10;
+	            theta = (float) (p1.angle(p2));
 	            
 	            Matrix4f rot = new Matrix4f();
 	            AxisAngle4f axisAngle = new AxisAngle4f(axis, theta);
@@ -619,8 +681,8 @@ public class simple5
 		jframe.getContentPane().add(renderPanel.getCanvas());// put the canvas into a JFrame window
 
 		// Add a mouse and key listener
-	    //renderPanel.getCanvas().addMouseListener(new TrackBallMouseListener());
-	   // renderPanel.getCanvas().addMouseMotionListener(new TrackBallMouseMotionListener());
+	    renderPanel.getCanvas().addMouseListener(new TrackBallMouseListener());
+	    renderPanel.getCanvas().addMouseMotionListener(new TrackBallMouseMotionListener());
 	    renderPanel.getCanvas().addKeyListener(new SimpleKeyListener());
 		renderPanel.getCanvas().setFocusable(true);   	    	    
 	      	    
