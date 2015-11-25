@@ -33,6 +33,7 @@ void main()
 	vec4[MAX_LIGHTS] reflextionPL;
 	vec4[MAX_LIGHTS] reflextionDL;
 	frag_shaded.xyzw = vec4(0.0,0.0,0.0,0.0);
+	vec4 ambientLightColor = vec4(0.2,0.2,0.2,1.0);
 	
 	// The built-in GLSL function "texture" performs the texture lookup
 	// For directional Lights
@@ -56,5 +57,7 @@ void main()
 	frag_shaded*=texture(myTexture,frag_texcoord);
 	
 	frag_shaded*=frag_color;
+	
+	frag_shaded+=frag_color*ambientLightColor;
 }
 

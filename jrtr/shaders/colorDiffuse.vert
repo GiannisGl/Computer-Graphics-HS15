@@ -48,7 +48,7 @@ void main()
 	for(int i=0; i<pLights; i++)
 	{
 		ndotPl[i]=max(dot(modelview*vec4(normal,0),normalize(light_positions[i]-modelview*position)),0);
-		sqDistanceToPL[i]=dot(light_positions[i]-modelview*position,light_positions[i]-modelview*position);
+		sqDistanceToPL[i]=length(light_positions[i]-modelview*position);//dot(light_positions[i]-modelview*position,light_positions[i]-modelview*position);
 	}
 
 	// Pass texture coordiantes to fragment shader, OpenGL automatically

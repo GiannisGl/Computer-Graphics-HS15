@@ -3,7 +3,7 @@
 // Fragment shader for diffuse shading in combination with a texture map
 
 #define MAX_LIGHTS 8
-#define PHONG_PARAM 16
+#define PHONG_PARAM 1
 
 // Uniform variables passed in from host program
 uniform sampler2D myTexture;
@@ -56,6 +56,6 @@ void main()
 		
 	frag_shaded*=texture(myTexture,frag_texcoord);
 	
-	frag_shaded+=texture(myTexture,frag_texcoord)*ambientLightColor;
+	//frag_shaded+=texture(myTexture,frag_texcoord)*ambientLightColor;
 }
 

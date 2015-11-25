@@ -3,16 +3,9 @@ package simple;
 import jrtr.*;
 import jrtr.Light.Type;
 import jrtr.glrenderer.*;
-import jrtr.swrenderer.SWRenderPanel;
-import simple.VirtualTrackball.PointToSphere;
-import simple.VirtualTrackball.TrackBallMouseListener;
-import simple.VirtualTrackball.TrackBallMouseMotionListener;
-import simple.simple.AnimationTask;
 
 import javax.swing.*;
 import java.awt.event.*;
-import java.io.IOException;
-import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -54,7 +47,7 @@ public class simple5
 	
 		float normals[] = {0,1,0,  0,1,0,  0,1,0,  0,1,0};
 						   
-		float colors[] = { 0,0.5f,0, 0,0.5f,0, 0,0.5f,0, 0,0.5f,0};
+		float colors[] = { 0,0.1f,0, 0,0.1f,0, 0,0.1f,0, 0,0.1f,0};
 	
 		// Set up the vertex data
 		VertexData vertexData = renderContext.makeVertexData(4);;
@@ -211,7 +204,7 @@ public class simple5
 		
 		
 		
-	
+		
 		// Texture coordinates of the round faces
 		float[] t = new float[2*2*segments+2*2];
 		for(int i=0; i<segments; i++)
@@ -391,7 +384,7 @@ public class simple5
 			groundM.setTranslation(new Vector3f(0,-8.5f,0));
 			groundTransform.setInitialTransformationMatrix(groundM);
 			groundTransform.setTransformationMatrix(groundM);
-			
+						
 			// ground node
 			ShapeNode groundNode = new ShapeNode();
 			groundNode.setShape(ground);
@@ -403,39 +396,23 @@ public class simple5
 			root = groundTransform;
 			sceneManager = new SceneGraphManager(root);
 			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/2);
-			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,20f,50f));
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(20f,10f,15f));
 			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
-			
 	
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
 			
-			Light light1 = new Light();
-			light1.position= new Vector3f(0f,2f, -10.f);
-			light1.type=Type.POINT;
-			light1.color= new Vector4f(1.f,0.f,0.f,1.f);
-			sceneManager.addLight(light1);
-			
-			Light light2 = new Light();
-			light2.position= new Vector3f(2f, 2f, -8f); 
-			light2.type=Type.POINT;
-			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
-			sceneManager.addLight(light2);
-			
-			Light light3 = new Light();
-			light3.position= new Vector3f(-2f, 0f, -8f); 
-			light3.type=Type.POINT;
-			light3.color= new Vector4f(1.f,1.f,1.f,1.f);
-			sceneManager.addLight(light3);
-
-			Light light4 = new Light();
-			light4.position= new Vector3f(0f, 1f, -2f); 
-			light4.type=Type.POINT;
-			light4.color= new Vector4f(1.f,1.f,1.f,1.f);
-			sceneManager.addLight(light4);
 			
 		    // load shader
+		    colorDiffuseShader = renderContext.makeShader();
+		    try {
+		    	colorDiffuseShader.load("../jrtr/shaders/colorDiffuse.vert", "../jrtr/shaders/colorDiffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+		    
 		    diffuseShader = renderContext.makeShader();
 		    try {
 		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
@@ -444,10 +421,18 @@ public class simple5
 		    	System.out.print(e.getMessage());
 		    }		
 
+
 		    // Make a material that can be used for shading
 			material = new Material();
+			//material.shader = colorDiffuseShader;
 			material.shader = diffuseShader;
 			material.diffuseMap = renderContext.makeTexture();
+			try {
+				material.diffuseMap.load("../textures/wood.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
 			
 			// Register a timer task
 		    Timer timer = new Timer();
@@ -485,6 +470,28 @@ public class simple5
 			headNode.setShape(head);
 			headTransform.addChild(headNode);
 			
+			// light transform
+			TransformGroup lightTransform = new TransformGroup();
+			Matrix4f lightM = new Matrix4f();
+			lightM.setIdentity();
+			lightM.setTranslation(new Vector3f(-1f,0f,0f));
+			lightTransform.setInitialTransformationMatrix(lightM);
+			lightTransform.setTransformationMatrix(lightM);
+			//headTransform.addChild(lightTransform);
+			//bodyTransform.addChild(lightTransform);
+			
+			// light node
+			LightNode lightNode = new LightNode();
+			Light light = new Light();
+			light.position= new Vector3f(0f,0f, 0f);
+			light.type=Type.POINT;
+			light.color= new Vector4f(1.f,1.f,1.f,1.f);
+			lightNode.setLight(light);
+			Matrix4f lightNodeM = new Matrix4f();
+			lightNodeM.setIdentity();
+			lightNode.setTransformationMatrix(lightNodeM);
+			lightTransform.addChild(lightNode);
+			
 			
 			// leg node
 			ShapeNode legNode = new ShapeNode();
@@ -512,6 +519,7 @@ public class simple5
 			leftLegTransform.setTransformationMatrix(leftLegM);
 			leftLegJointTransform.addChild(leftLegTransform);
 			leftLegTransform.addChild(legNode);
+			//leftLegTransform.addChild(lightTransform);
 			
 			// right leg joint
 			rightLegJointTransform = new TransformGroup();
@@ -560,8 +568,10 @@ public class simple5
 			leftArmM.setTranslation(new Vector3f(0,-4f,0));
 			leftArmTransform.setInitialTransformationMatrix(leftArmM);
 			leftArmTransform.setTransformationMatrix(leftArmM);
-			leftArmJointTransform.addChild(leftArmTransform);
 			leftArmTransform.addChild(armNode);
+			leftArmTransform.addChild(lightTransform);
+			leftArmJointTransform.addChild(leftArmTransform);
+			
 			
 			// right arm joint
 			rightArmJointTransform = new TransformGroup();
@@ -584,8 +594,6 @@ public class simple5
 			rightArmJointTransform.addChild(rightArmTransform);
 			rightArmTransform.addChild(armNode);
 			bodyTransform.addChild(rightArmJointTransform);
-			
-			
 			
 			return bodyTransform;
 		}
@@ -760,6 +768,32 @@ public class simple5
 				case '-': {
 					// Slow down rotation
 					currentstep -= basicstep;
+					break;
+				}
+				case 'm': {
+					// Set a material for more complex shading of the shape
+					if(!withMaterial) {
+						arm.setMaterial(material);
+						ground.setMaterial(material);
+						body.setMaterial(material);
+						leg.setMaterial(material);
+						head.setMaterial(material);
+						armJoint.setMaterial(material);
+						legJoint.setMaterial(material);
+						renderContext.useShader(material.shader);
+						withMaterial=true;
+					} else
+					{
+						arm.setMaterial(null);
+						ground.setMaterial(null);
+						body.setMaterial(null);
+						leg.setMaterial(null);
+						head.setMaterial(null);
+						armJoint.setMaterial(null);
+						legJoint.setMaterial(null);
+						renderContext.useDefaultShader();
+						withMaterial=false;
+					}
 					break;
 				}
 			}
