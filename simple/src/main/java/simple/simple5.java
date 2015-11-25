@@ -3,6 +3,7 @@ package simple;
 import jrtr.*;
 import jrtr.Light.Type;
 import jrtr.glrenderer.*;
+import jrtr.swrenderer.SWRenderPanel;
 import simple.VirtualTrackball.PointToSphere;
 import simple.VirtualTrackball.TrackBallMouseListener;
 import simple.VirtualTrackball.TrackBallMouseMotionListener;
@@ -11,6 +12,7 @@ import simple.simple.AnimationTask;
 import javax.swing.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -40,11 +42,35 @@ public class simple5
 	static Vector3f axis = new Vector3f();
 	static float theta;
 	static boolean withMaterial=false;
-	static Shape body, leg, arm, head, legJoint, armJoint;
-	static TransformGroup root, leftLegJointTransform, leftLegTransform, rightLegJointTransform, rightLegTransform,
+	static Shape ground, body, leg, arm, head, legJoint, armJoint;
+	static TransformGroup root, groundTransform, bodyTransform, leftLegJointTransform, leftLegTransform, rightLegJointTransform, rightLegTransform,
 						leftArmJointTransform, leftArmTransform, rightArmJointTransform, rightArmTransform;
 	static float time=0;
-			
+
+	public static final Shape ground()
+	{
+		// A house
+		float vertices[] = {-100,0,100, 100,0,100, 100,0,-100, -100,0,-100};
+	
+		float normals[] = {0,1,0,  0,1,0,  0,1,0,  0,1,0};
+						   
+		float colors[] = { 0,0.5f,0, 0,0.5f,0, 0,0.5f,0, 0,0.5f,0};
+	
+		// Set up the vertex data
+		VertexData vertexData = renderContext.makeVertexData(4);;
+	
+		vertexData.addElement(vertices, VertexData.Semantic.POSITION, 3);
+		vertexData.addElement(colors, VertexData.Semantic.COLOR, 3);
+		vertexData.addElement(normals, VertexData.Semantic.NORMAL, 3);
+		int indices[] = { 0,2,1, 0,2,3};	
+		vertexData.addIndices(indices);
+	
+		Shape ground = new Shape(vertexData);
+		
+		return ground;
+	}
+	
+	
 	// Make a simple geometric object: a cube
 	public final static Shape cube()
 	{	
@@ -340,11 +366,12 @@ public class simple5
 		public final void init(RenderContext r)
 		{
 			renderContext = r;
-			
+
+			ground = ground();
+			body = cube();
 			head = torus(40 , 40, 0, 2);
 			leg = cylinder(20, 0.5f, 4);
     		arm = cylinder(20, 0.5f, 3.5f);
-			body = cube();
 			Matrix4f bodyM = new Matrix4f();
 			bodyM.setIdentity();
 			bodyM.setScale(4);
@@ -357,10 +384,26 @@ public class simple5
 		
 		public void renderer(RenderContext r)
 		{
-			root = makeRobot();
+			// ground transform
+			groundTransform = new TransformGroup();
+			Matrix4f groundM = new Matrix4f();
+			groundM.setIdentity();
+			groundM.setTranslation(new Vector3f(0,-8.5f,0));
+			groundTransform.setInitialTransformationMatrix(groundM);
+			groundTransform.setTransformationMatrix(groundM);
+			
+			// ground node
+			ShapeNode groundNode = new ShapeNode();
+			groundNode.setShape(ground);
+			groundTransform.addChild(groundNode);
+			
+			bodyTransform = makeRobot();
+			groundTransform.addChild(bodyTransform);
+			
+			root = groundTransform;
 			sceneManager = new SceneGraphManager(root);
 			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/2);
-			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,40f));
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,20f,50f));
 			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
 			
@@ -419,7 +462,7 @@ public class simple5
 			TransformGroup bodyTransform = new TransformGroup();
 			Matrix4f bodyM = new Matrix4f();
 			bodyM.setIdentity();
-			bodyM.setTranslation(new Vector3f(10,0,0));
+			bodyM.setTranslation(new Vector3f(20,12f,0));
 			bodyTransform.setInitialTransformationMatrix(bodyM);
 			bodyTransform.setTransformationMatrix(bodyM);
 			
@@ -501,6 +544,9 @@ public class simple5
 			leftArmJointTransform = new TransformGroup();
 			Matrix4f leftArmJointM = new Matrix4f();
 			leftArmJointM.setIdentity();
+			Matrix4f rotZ = new Matrix4f();
+    		rotZ.rotZ((float) -Math.PI/4);
+			leftArmJointM.mul(rotZ, leftArmJointM);
 			leftArmJointM.setTranslation(new Vector3f(-4.5f,1f,0));
 			leftArmJointTransform.setInitialTransformationMatrix(leftArmJointM);
 			leftArmJointTransform.setTransformationMatrix(leftArmJointM);
@@ -521,6 +567,8 @@ public class simple5
 			rightArmJointTransform = new TransformGroup();
 			Matrix4f rightArmJointM = new Matrix4f();
 			rightArmJointM.setIdentity();
+    		rotZ.rotZ((float) Math.PI/4);
+    		rightArmJointM.mul(rotZ, rightArmJointM);
 			rightArmJointM.setTranslation(new Vector3f(4.5f, 1f, 0));
 			rightArmJointTransform.setInitialTransformationMatrix(rightArmJointM);
 			rightArmJointTransform.setTransformationMatrix(rightArmJointM);
@@ -541,33 +589,6 @@ public class simple5
 			
 			return bodyTransform;
 		}
-		
-		public TransformGroup makeLeg(Vector3f translation)
-		{
-			TransformGroup legJointTransform = new TransformGroup();
-			Matrix4f legJointM = new Matrix4f();
-			legJointM.setIdentity();
-			legJointM.setTranslation(translation);
-			legJointTransform.setTransformationMatrix(legJointM);
-			
-			ShapeNode legJointNode = new ShapeNode();
-			legJointNode.setShape(legJoint);
-			legJointTransform.addChild(legJointNode);
-			
-			TransformGroup legTransform = new TransformGroup();
-			Matrix4f legM 
-			= new Matrix4f();
-			legM.setIdentity();
-			legM.setTranslation(new Vector3f(0,-3.5f,0));
-			legTransform.setTransformationMatrix(legM);
-			legJointTransform.addChild(legTransform);
-			
-			ShapeNode legNode = new ShapeNode();
-			legNode.setShape(leg);
-			legTransform.addChild(legNode);
-				
-			return legJointTransform;
-		}
 	}
 	
 
@@ -585,13 +606,13 @@ public class simple5
     		rotY.rotY(currentstep);
     		
     		Matrix4f rotX = new Matrix4f();
-    		float leftAngle = (float) (Math.cos(time)*Math.PI/4);
+    		float leftAngle = (float) (Math.cos(time)*Math.PI/3);
     		rotX.rotX(leftAngle);
 			
 			
-			Matrix4f t = root.getTransformationMatrix();
+			Matrix4f t = bodyTransform.getTransformationMatrix();
     		t.mul(rotY, t);    		
-    		root.setTransformationMatrix(t);
+    		bodyTransform.setTransformationMatrix(t);
 
 			Matrix4f leftLegM = new Matrix4f(leftLegTransform.getInitialTransformationMatrix());
 			leftLegM.mul(rotX, leftLegM);    		
