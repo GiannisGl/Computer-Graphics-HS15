@@ -30,7 +30,6 @@ public class simple5
 	static Shader colorDiffuseShader;
 	static Material material, material2, material3, materialC;
 	static SceneGraphManager sceneManager;
-	static Shape body, leg, arm, head, joint;
 	static float currentstep, basicstep;
 	static int width=500;
 	static int height=500;
@@ -41,7 +40,10 @@ public class simple5
 	static Vector3f axis = new Vector3f();
 	static float theta;
 	static boolean withMaterial=false;
-	static TransformGroup root, leftLegJointTransform, leftLegTransform, rightLegJointTransform, rightLegTransform;
+	static Shape body, leg, arm, head, legJoint, armJoint;
+	static TransformGroup root, leftLegJointTransform, leftLegTransform, rightLegJointTransform, rightLegTransform,
+						leftArmJointTransform, leftArmTransform, rightArmJointTransform, rightArmTransform;
+	static float time=0;
 			
 	// Make a simple geometric object: a cube
 	public final static Shape cube()
@@ -339,15 +341,16 @@ public class simple5
 		{
 			renderContext = r;
 			
-			head = torus(40 , 40, 0, 1);
-			leg = cylinder(20, 0.5f, 3);
-    		arm = cylinder(20, 1, 1);
+			head = torus(40 , 40, 0, 2);
+			leg = cylinder(20, 0.5f, 4);
+    		arm = cylinder(20, 0.5f, 3.5f);
 			body = cube();
 			Matrix4f bodyM = new Matrix4f();
 			bodyM.setIdentity();
 			bodyM.setScale(4);
 			body.setTransformation(bodyM);
-			joint = torus(20, 20, 0, 0.5f);
+			legJoint = torus(20, 20, 0, 0.5f);
+			armJoint = torus(20, 20, 0, 0.5f);
 			
 			renderer(r);
 		}
@@ -357,7 +360,7 @@ public class simple5
 			root = makeRobot();
 			sceneManager = new SceneGraphManager(root);
 			sceneManager.getFrustum().setProjectionMatrix(1, 100, 1, (float) Math.PI/2);
-			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,20f));
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,40f));
 			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
 			
@@ -412,57 +415,129 @@ public class simple5
 		
 		public TransformGroup makeRobot(){
 			
+			// body transform
 			TransformGroup bodyTransform = new TransformGroup();
 			Matrix4f bodyM = new Matrix4f();
 			bodyM.setIdentity();
 			bodyM.setTranslation(new Vector3f(10,0,0));
+			bodyTransform.setInitialTransformationMatrix(bodyM);
 			bodyTransform.setTransformationMatrix(bodyM);
 			
+			// body node
 			ShapeNode bodyNode = new ShapeNode();
 			bodyNode.setShape(body);
 			bodyTransform.addChild(bodyNode);
-
+			
+			// head transform
+			TransformGroup headTransform = new TransformGroup();
+			Matrix4f headM = new Matrix4f();
+			headM.setIdentity();
+			headM.setTranslation(new Vector3f(0,6,0));
+			headTransform.setInitialTransformationMatrix(headM);
+			headTransform.setTransformationMatrix(headM);
+			bodyTransform.addChild(headTransform);
+			
+			// head node
+			ShapeNode headNode = new ShapeNode();
+			headNode.setShape(head);
+			headTransform.addChild(headNode);
+			
+			
+			// leg node
 			ShapeNode legNode = new ShapeNode();
 			legNode.setShape(leg);
-
+			// leg joint node
 			ShapeNode legJointNode = new ShapeNode();
-			legJointNode.setShape(joint);
+			legJointNode.setShape(legJoint);
 			
+			// left leg joint
 			leftLegJointTransform = new TransformGroup();
 			Matrix4f leftLegJointM = new Matrix4f();
 			leftLegJointM.setIdentity();
 			leftLegJointM.setTranslation(new Vector3f(-3.5f,-4.5f,0));
+			leftLegJointTransform.setInitialTransformationMatrix(leftLegJointM);
 			leftLegJointTransform.setTransformationMatrix(leftLegJointM);
-			
 			leftLegJointTransform.addChild(legJointNode);
+			bodyTransform.addChild(leftLegJointTransform);
 			
+			// left leg transform
 			leftLegTransform = new TransformGroup();
 			Matrix4f leftLegM = new Matrix4f();
 			leftLegM.setIdentity();
-			leftLegM.setTranslation(new Vector3f(0,-3.5f,0));
+			leftLegM.setTranslation(new Vector3f(0,-4.5f,0));
+			leftLegTransform.setInitialTransformationMatrix(leftLegM);
 			leftLegTransform.setTransformationMatrix(leftLegM);
 			leftLegJointTransform.addChild(leftLegTransform);
-			
 			leftLegTransform.addChild(legNode);
-			bodyTransform.addChild(leftLegJointTransform);
 			
+			// right leg joint
 			rightLegJointTransform = new TransformGroup();
 			Matrix4f rightLegJointM = new Matrix4f();
 			rightLegJointM.setIdentity();
 			rightLegJointM.setTranslation(new Vector3f(3.5f, -4.5f, 0));
+			rightLegJointTransform.setInitialTransformationMatrix(rightLegJointM);
 			rightLegJointTransform.setTransformationMatrix(rightLegJointM);
-			
 			rightLegJointTransform.addChild(legJointNode);
+			bodyTransform.addChild(rightLegJointTransform);
 			
+			// right leg transform
 			rightLegTransform = new TransformGroup();
 			Matrix4f rightLegM = new Matrix4f();
 			rightLegM.setIdentity();
-			rightLegM.setTranslation(new Vector3f(0,-3.5f,0));
+			rightLegM.setTranslation(new Vector3f(0,-4.5f,0));
+			rightLegTransform.setInitialTransformationMatrix(rightLegM);
 			rightLegTransform.setTransformationMatrix(rightLegM);
 			rightLegJointTransform.addChild(rightLegTransform);
-			
 			rightLegTransform.addChild(legNode);
-			bodyTransform.addChild(rightLegJointTransform);
+
+			// arm node
+			ShapeNode armNode = new ShapeNode();
+			armNode.setShape(arm);
+			// arm joint node
+			ShapeNode armJointNode = new ShapeNode();
+			armJointNode.setShape(armJoint);
+			
+			// left arm joint
+			leftArmJointTransform = new TransformGroup();
+			Matrix4f leftArmJointM = new Matrix4f();
+			leftArmJointM.setIdentity();
+			leftArmJointM.setTranslation(new Vector3f(-4.5f,1f,0));
+			leftArmJointTransform.setInitialTransformationMatrix(leftArmJointM);
+			leftArmJointTransform.setTransformationMatrix(leftArmJointM);
+			leftArmJointTransform.addChild(armJointNode);
+			bodyTransform.addChild(leftArmJointTransform);
+			
+			// left arm transform
+			leftArmTransform = new TransformGroup();
+			Matrix4f leftArmM = new Matrix4f();
+			leftArmM.setIdentity();
+			leftArmM.setTranslation(new Vector3f(0,-4f,0));
+			leftArmTransform.setInitialTransformationMatrix(leftArmM);
+			leftArmTransform.setTransformationMatrix(leftArmM);
+			leftArmJointTransform.addChild(leftArmTransform);
+			leftArmTransform.addChild(armNode);
+			
+			// right arm joint
+			rightArmJointTransform = new TransformGroup();
+			Matrix4f rightArmJointM = new Matrix4f();
+			rightArmJointM.setIdentity();
+			rightArmJointM.setTranslation(new Vector3f(4.5f, 1f, 0));
+			rightArmJointTransform.setInitialTransformationMatrix(rightArmJointM);
+			rightArmJointTransform.setTransformationMatrix(rightArmJointM);
+			rightArmJointTransform.addChild(armJointNode);
+			
+			// right arm transform
+			rightArmTransform = new TransformGroup();
+			Matrix4f rightArmM = new Matrix4f();
+			rightArmM.setIdentity();
+			rightArmM.setTranslation(new Vector3f(0,-4f,0));
+			rightArmTransform.setInitialTransformationMatrix(rightArmM);
+			rightArmTransform.setTransformationMatrix(rightArmM);
+			rightArmJointTransform.addChild(rightArmTransform);
+			rightArmTransform.addChild(armNode);
+			bodyTransform.addChild(rightArmJointTransform);
+			
+			
 			
 			return bodyTransform;
 		}
@@ -476,7 +551,7 @@ public class simple5
 			legJointTransform.setTransformationMatrix(legJointM);
 			
 			ShapeNode legJointNode = new ShapeNode();
-			legJointNode.setShape(joint);
+			legJointNode.setShape(legJoint);
 			legJointTransform.addChild(legJointNode);
 			
 			TransformGroup legTransform = new TransformGroup();
@@ -505,21 +580,36 @@ public class simple5
 	{
 		public void run()
 		{
+			time+=3*currentstep;
     		Matrix4f rotY = new Matrix4f();
     		rotY.rotY(currentstep);
     		
-    		long time = this.scheduledExecutionTime();
     		Matrix4f rotX = new Matrix4f();
-    		rotX.rotX(currentstep*(float) Math.cos(time));
+    		float leftAngle = (float) (Math.cos(time)*Math.PI/4);
+    		rotX.rotX(leftAngle);
 			
 			
 			Matrix4f t = root.getTransformationMatrix();
     		t.mul(rotY, t);    		
     		root.setTransformationMatrix(t);
 
-			Matrix4f leftLegM = leftLegTransform.getTransformationMatrix();
-    		leftLegM.mul(rotX, leftLegM);    		
+			Matrix4f leftLegM = new Matrix4f(leftLegTransform.getInitialTransformationMatrix());
+			leftLegM.mul(rotX, leftLegM);    		
     		leftLegTransform.setTransformationMatrix(leftLegM);
+    		
+    		Matrix4f rightArmM = new Matrix4f(rightArmTransform.getInitialTransformationMatrix());
+    		rightArmM.mul(rotX, rightArmM);
+    		rightArmTransform.setTransformationMatrix(rightArmM);
+    		
+    		float rightAngle = (float) -(Math.cos(time)*Math.PI/4);
+    		rotX.rotX(rightAngle);
+			Matrix4f rightLegM = new Matrix4f(rightLegTransform.getInitialTransformationMatrix());
+			rightLegM.mul(rotX, rightLegM);    		
+			rightLegTransform.setTransformationMatrix(rightLegM);
+			
+			Matrix4f leftArmM = new Matrix4f(leftArmTransform.getInitialTransformationMatrix());
+			leftArmM.mul(rotX, leftArmM);
+			leftArmTransform.setTransformationMatrix(leftArmM);
     		
 			// Trigger redrawing of the render window
 			renderPanel.getCanvas().repaint(); 
