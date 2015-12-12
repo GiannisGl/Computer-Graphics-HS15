@@ -50,9 +50,9 @@ public final class RotationalBezierBody {
 		float[] colors = new float[3*nrVertices];
 		for(int i=0; i<nrVertices; i++)
 		{
-			colors[3*i]= 1;
-			colors[3*i+1]= (float) Math.floorDiv(i, nrCurvePoints)/(nrRotSteps);
-			colors[3*i+2]= (float) Math.floorDiv(i, nrCurvePoints)/(nrRotSteps);
+			colors[3*i]= (float) Math.floorMod(Math.floorDiv(i, nrCurvePoints),2);
+			colors[3*i+1]= (float) Math.floorMod(Math.floorDiv(i, nrCurvePoints),2);
+			colors[3*i+2]= (float) Math.floorMod(Math.floorDiv(i, nrCurvePoints),2);
 		}
 		
 		VertexData vertexData = new GLVertexData(nrVertices);
