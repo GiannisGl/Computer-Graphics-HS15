@@ -99,8 +99,6 @@ public final class FractalLandscape
 			}
 		}
 		
-		
-			
 		vertexData.addIndices(indices);
 										
 		// Add the object to the scene Manager

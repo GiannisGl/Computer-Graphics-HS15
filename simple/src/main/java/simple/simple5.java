@@ -477,7 +477,7 @@ public class simple5
 			lightM.setTranslation(new Vector3f(-1f,0f,0f));
 			lightTransform.setInitialTransformationMatrix(lightM);
 			lightTransform.setTransformationMatrix(lightM);
-			//headTransform.addChild(lightTransform);
+			headTransform.addChild(lightTransform);
 			//bodyTransform.addChild(lightTransform);
 			
 			// light node
