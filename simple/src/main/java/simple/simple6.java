@@ -64,7 +64,30 @@ public class simple6
 		public void renderer(RenderContext r, Shape shape)
 		{
 			renderContext = r;
-						
+					
+			// load shader
+		    
+		    diffuseShader = renderContext.makeShader();
+		    try {
+		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }		
+
+
+		    // Make a material that can be used for shading
+			material = new Material();
+			//material.shader = colorDiffuseShader;
+			material.shader = diffuseShader;
+			material.diffuseMap = renderContext.makeTexture();
+			try {
+				material.diffuseMap.load("../textures/wood.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
+			
 			// Add the object to the scene Manager
 			sceneManager.addShape(shape);
 					
@@ -162,13 +185,16 @@ public class simple6
 		// Make a render panel. The init function of the renderPanel
 		// (see above) will be called back for initialization.
 		
-		Vector3f[] controlPoints = new Vector3f[4];
-		controlPoints[0] = new Vector3f(1,0,0);
-		controlPoints[1] = new Vector3f(2,1,0);
-		controlPoints[2] = new Vector3f(2,2,0);
-		controlPoints[3] = new Vector3f(1,3,0);
+		Vector3f[] controlPoints = new Vector3f[7];
+		controlPoints[0] = new Vector3f(1,-3,0);
+		controlPoints[1] = new Vector3f(2,-2,0);
+		controlPoints[2] = new Vector3f(2,-1,0);
+		controlPoints[3] = new Vector3f(1,0,0);
+		controlPoints[4] = new Vector3f(2,1,0);
+		controlPoints[5] = new Vector3f(2,2,0);
+		controlPoints[6] = new Vector3f(1,3,0);
 		
-		renderPanel = new RotationalBodyRenderPanel(1, controlPoints, 2, 10);
+		renderPanel = new RotationalBodyRenderPanel(2, controlPoints, 2, 10);
 
 		currentstep = 1f;
 		// Add a mouse and key listener
