@@ -103,7 +103,7 @@ public class simple6
 			material.shader = diffuseShader;
 			material.diffuseMap = renderContext.makeTexture();
 			try {
-				material.diffuseMap.load("../textures/wood.jpg");
+				material.diffuseMap.load("../textures/plant2.jpg");
 			} catch(Exception e) {				
 				System.out.print("Could not load texture.\n");
 				System.out.print(e.getMessage());

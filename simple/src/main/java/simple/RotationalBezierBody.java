@@ -33,7 +33,7 @@ public final class RotationalBezierBody {
 	}
 	
 	public Shape createBody(){
-		if(controlPoints.length!=bezierSegments*3+1){
+		if(nrControlPoints!=bezierSegments*3+1){
 			System.out.println("incorrect number of control points");
 			return null;
 		}
@@ -69,27 +69,28 @@ public final class RotationalBezierBody {
 		float[] textCoords = new float[2*nrVertices];
 		for(int i=0; i<nrVertices; i++)
 		{
-			textCoords[2*i]= (float) Math.floorDiv(i, nrCurvePoints)/nrRotSteps;
-			textCoords[2*i+1]= (float) Math.floorMod(i, nrCurvePoints)/(nrCurvePoints-1);
+			textCoords[2*i]= vertices[i][2].x;
+			textCoords[2*i+1]= vertices[i][2].y;
 		}
 		
 		VertexData vertexData = new GLVertexData(nrVertices);
 		vertexData.addElement(floatVertices, Semantic.POSITION, 3);
 		vertexData.addElement(floatNormals, Semantic.NORMAL, 3);
 		vertexData.addElement(colors, Semantic.COLOR, 3);
+		vertexData.addElement(textCoords, Semantic.TEXCOORD, 2);
 		
 		int indices[] = new int[2*3*(nrVertices-nrRotSteps)];
 		for(int i=0; i<nrRotSteps; i++)
 		{
 			for(int j=0; j<nrCurvePoints-1; j++)
 			{
-				indices[6*((nrCurvePoints-1)*i+j)]=nrCurvePoints*Math.floorMod(i, nrRotSteps)+j;
-				indices[6*((nrCurvePoints-1)*i+j)+1]=nrCurvePoints*Math.floorMod(i+1, nrRotSteps)+j;
-				indices[6*((nrCurvePoints-1)*i+j)+2]=nrCurvePoints*Math.floorMod(i+1, nrRotSteps)+j+1;
+				indices[6*((nrCurvePoints-1)*i+j)]=nrCurvePoints*i+j;
+				indices[6*((nrCurvePoints-1)*i+j)+1]=nrCurvePoints*(i+1)+j;
+				indices[6*((nrCurvePoints-1)*i+j)+2]=nrCurvePoints*(i+1)+j+1;
 				
-				indices[6*((nrCurvePoints-1)*i+j)+3]=nrCurvePoints*Math.floorMod(i, nrRotSteps)+j;
-				indices[6*((nrCurvePoints-1)*i+j)+4]=nrCurvePoints*Math.floorMod(i+1, nrRotSteps)+j+1;
-				indices[6*((nrCurvePoints-1)*i+j)+5]=nrCurvePoints*Math.floorMod(i, nrRotSteps)+j+1;
+				indices[6*((nrCurvePoints-1)*i+j)+3]=nrCurvePoints*i+j;
+				indices[6*((nrCurvePoints-1)*i+j)+4]=nrCurvePoints*(i+1)+j+1;
+				indices[6*((nrCurvePoints-1)*i+j)+5]=nrCurvePoints*i+j+1;
 			}
 		}
 		
@@ -103,12 +104,12 @@ public final class RotationalBezierBody {
 	
 	public Vector3f[][] rotationalBodyVertices(){
 		Vector3f[][] curveVertices = curveVertices();
-		Vector3f[][] rotationalBodyVertices = new Vector3f[nrVertices][2];
+		Vector3f[][] rotationalBodyVertices = new Vector3f[nrVertices][3];
 		
 		for(int i=0; i<=nrRotSteps; i++){
 			double angle = 2*Math.PI*i/nrRotSteps;
 			Matrix4d rotY = new Matrix4d();
-			rotY.rotY(-angle);
+			rotY.rotY(angle);
 			for(int j=0; j<nrCurvePoints; j++){
 				// rotate point
 				Vector3f pInit = new Vector3f(curveVertices[j][0]);
@@ -119,6 +120,12 @@ public final class RotationalBezierBody {
 				Vector3f nInit = new Vector3f(curveVertices[j][1]);
 				rotY.transform(nInit);
 				rotationalBodyVertices[nrCurvePoints*i+j][1] = new Vector3f(nInit);
+				
+				Vector3f textCoord = new Vector3f();
+				textCoord.x = (float) i/nrRotSteps;
+				textCoord.y = (float) j/(nrCurvePoints-1);
+				textCoord.z = 0;
+				rotationalBodyVertices[nrCurvePoints*i+j][2] = new Vector3f(textCoord);
 			}
 		}
 		
@@ -137,12 +144,14 @@ public final class RotationalBezierBody {
 			
 			for(int j=0; j<=nrEvPoints; j++){
 				float t = (float) j/(nrEvPoints+1);
-				vertices[(nrEvPoints+1)*i+j][0] = pointOnSegment(t, p0, p1, p2, p3)[0];
-				vertices[(nrEvPoints+1)*i+j][1] = pointOnSegment(t, p0, p1, p2, p3)[1];
+				Vector3f[] point = pointOnSegment(t, p0, p1, p2, p3);
+				vertices[(nrEvPoints+1)*i+j][0] = point[0];
+				vertices[(nrEvPoints+1)*i+j][1] = point[1];
 			}
 			if( i == bezierSegments-1){
-				vertices[nrCurvePoints-1][0] = pointOnSegment(1, p0, p1, p2, p3)[0];
-				vertices[nrCurvePoints-1][1] = pointOnSegment(1, p0, p1, p2, p3)[1];
+				Vector3f[] point = pointOnSegment(1, p0, p1, p2, p3);
+				vertices[nrCurvePoints-1][0] = point[0];
+				vertices[nrCurvePoints-1][1] = point[1];
 			}
 		}
 		
@@ -169,9 +178,10 @@ public final class RotationalBezierBody {
 		point[0] = xt;
 		
 		// normals
-		Vector4f tangentVector = new Vector4f(0,0,1,0);
+		Vector4f tangentVector = new Vector4f((float) Math.pow(t, 2)*3, 2*t, 1, 0);
 		vectors.transform(tangentVector);
 		Vector3f nt = new Vector3f(-tangentVector.y, tangentVector.x, 0);
+		nt.normalize();
 		point[1] = nt;
 		
 		return point;
