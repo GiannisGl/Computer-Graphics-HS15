@@ -137,10 +137,12 @@ public final class RotationalBezierBody {
 			
 			for(int j=0; j<=nrEvPoints; j++){
 				float t = (float) j/(nrEvPoints+1);
-				vertices[(nrEvPoints+1)*i+j] = pointOnSegment(t, p0, p1, p2, p3);
+				vertices[(nrEvPoints+1)*i+j][0] = pointOnSegment(t, p0, p1, p2, p3)[0];
+				vertices[(nrEvPoints+1)*i+j][1] = pointOnSegment(t, p0, p1, p2, p3)[1];
 			}
-			if( i == bezierSegments){
-				vertices[nrCurvePoints-1] = pointOnSegment(1, p0, p1, p2, p3);
+			if( i == bezierSegments-1){
+				vertices[nrCurvePoints-1][0] = pointOnSegment(1, p0, p1, p2, p3)[0];
+				vertices[nrCurvePoints-1][1] = pointOnSegment(1, p0, p1, p2, p3)[1];
 			}
 		}
 		

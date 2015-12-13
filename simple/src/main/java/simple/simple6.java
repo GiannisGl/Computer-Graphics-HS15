@@ -69,7 +69,7 @@ public class simple6
 		    
 		    diffuseShader = renderContext.makeShader();
 		    try {
-		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+		    	diffuseShader.load("../jrtr/shaders/diffuseInit.vert", "../jrtr/shaders/diffuseInit.frag");
 		    } catch(Exception e) {
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
@@ -171,6 +171,57 @@ public class simple6
 		}
 		@Override
 		public void mouseMoved(MouseEvent e) {}
+	}
+	
+	/**
+	 * A key listener for the main window. Use this to process key events.
+	 * Currently this provides the following controls:
+	 * 's': stop animation
+	 * 'p': play animation
+	 * '+': accelerate rotation
+	 * '-': slow down rotation
+	 * 'd': default shader
+	 * 'n': shader using surface normals
+	 * 'm': use a material for shading
+	 */
+	public static class SimpleKeyListener implements KeyListener
+	{
+		public void keyPressed(KeyEvent e)
+		{
+			switch(e.getKeyChar())
+			{
+				case 'n': {
+					// Remove material from shape, and set "normal" shader
+					shape.setMaterial(null);
+					renderContext.useShader(normalShader);
+					break;
+				}
+				case 'd': {
+					// Remove material from shape, and set "default" shader
+					shape.setMaterial(null);
+					renderContext.useDefaultShader();
+					break;
+				}
+				case 'm': {
+					// Set a material for more complex shading of the shape
+					if(shape.getMaterial() == null) {
+						shape.setMaterial(material);
+					} else
+					{
+						shape.setMaterial(null);
+						renderContext.useDefaultShader();
+					}
+					break;
+				}
+			}
+			
+			// Trigger redrawing
+			renderPanel.getCanvas().repaint();
+		}
+		
+		public void keyReleased(KeyEvent e){}
+
+		public void keyTyped(KeyEvent e){}
 
 	}
 	
@@ -198,7 +249,7 @@ public class simple6
 
 		currentstep = 1f;
 		// Add a mouse and key listener
-
+		renderPanel.getCanvas().addKeyListener(new SimpleKeyListener());
 	    renderPanel.getCanvas().addMouseListener(new TrackBallMouseListener());
 	    renderPanel.getCanvas().addMouseMotionListener(new TrackBallMouseMotionListener());
 		
