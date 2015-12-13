@@ -1,6 +1,7 @@
 package simple;
 
 import jrtr.*;
+import jrtr.Light.Type;
 import jrtr.glrenderer.*;
 
 import javax.swing.*;
@@ -64,7 +65,21 @@ public class simple6
 		public void renderer(RenderContext r, Shape shape)
 		{
 			renderContext = r;
-					
+			
+			// Lights
+			Light light1 = new Light();
+			light1.direction= new Vector3f(0f,0f, -1.f);
+			light1.type=Type.DIRECTIONAL;
+			light1.color= new Vector4f(1.f,1.f,1.f,1.f);
+			sceneManager.addLight(light1);
+			
+			Light light2 = new Light();
+			light2.position= new Vector3f(1f, 0f, -2f); 
+			light2.type=Type.POINT;
+			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
+			//sceneManager.addLight(light2);
+			
+			
 			// load shader
 			normalShader = renderContext.makeShader();
 		    try {
