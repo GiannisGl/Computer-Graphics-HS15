@@ -66,7 +66,14 @@ public class simple6
 			renderContext = r;
 					
 			// load shader
-		    
+			normalShader = renderContext.makeShader();
+		    try {
+		    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+	
 		    diffuseShader = renderContext.makeShader();
 		    try {
 		    	diffuseShader.load("../jrtr/shaders/diffuseInit.vert", "../jrtr/shaders/diffuseInit.frag");
@@ -78,7 +85,6 @@ public class simple6
 
 		    // Make a material that can be used for shading
 			material = new Material();
-			//material.shader = colorDiffuseShader;
 			material.shader = diffuseShader;
 			material.diffuseMap = renderContext.makeTexture();
 			try {

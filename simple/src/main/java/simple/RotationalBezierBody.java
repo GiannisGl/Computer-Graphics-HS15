@@ -169,9 +169,9 @@ public final class RotationalBezierBody {
 		point[0] = xt;
 		
 		// normals
-		Vector4f nVector = new Vector4f(0,0,1,0);
-		vectors.transform(nVector);
-		Vector3f nt = new Vector3f(nVector.x, nVector.y, nVector.z);
+		Vector4f tangentVector = new Vector4f(0,0,1,0);
+		vectors.transform(tangentVector);
+		Vector3f nt = new Vector3f(-tangentVector.y, tangentVector.x, 0);
 		point[1] = nt;
 		
 		return point;
