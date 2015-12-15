@@ -32,14 +32,14 @@ void main()
 	vec4[MAX_LIGHTS] reflextionPL;
 	vec4[MAX_LIGHTS] reflextionDL;
 	vec4 ambientLightColor = vec4(0.1,0.1,0.1,1.0);
-	float specular = 20*(texture(myTexture,frag_texcoord).x+texture(myTexture,frag_texcoord).y+texture(myTexture,frag_texcoord).z);
+	float specular = 0.5f*(texture(myTexture,frag_texcoord).x+texture(myTexture,frag_texcoord).y+texture(myTexture,frag_texcoord).z);
 	frag_shaded.xyzw = vec4(0.0,0.0,0.0,0.0);
 	
 	// The built-in GLSL function "texture" performs the texture lookup
 	// For directional Lights
 	for(int i=0; i<dLights; i++)
 	{
-		frag_shaded+= 0*directionalLight_colors[i]*ndotDl[i]*texture(myTexture,frag_texcoord);
+		frag_shaded+= directionalLight_colors[i]*ndotDl[i]*texture(myTexture,frag_texcoord);
 		reflextionDL[i]=2*ndotDl[i]*mVnormal4f-lightDirection[i];
 		frag_shaded+= directionalLight_colors[i]*pow(max(dot(reflextionDL[i],(-mVposition)),0),PHONG_PARAM)*specular;
 	}
@@ -56,6 +56,6 @@ void main()
 		
 	frag_shaded*=texture(myTexture,frag_texcoord);
 	
-	//frag_shaded+=texture(myTexture,frag_texcoord)*ambientLightColor;
+	frag_shaded+=texture(myTexture,frag_texcoord)*ambientLightColor;
 }
 

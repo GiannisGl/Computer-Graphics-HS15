@@ -2,10 +2,14 @@ package simple;
 
 import jrtr.*;
 import jrtr.Light.Type;
+import jrtr.VertexData.Semantic;
 import jrtr.glrenderer.*;
+import simple.simple4.CylinderRenderPanel;
+import simple.simple4.TorusRenderPanel;
 
 import javax.swing.*;
 import java.awt.event.*;
+import java.io.IOException;
 
 import javax.vecmath.*;
 /**
@@ -16,12 +20,11 @@ public class simple6
 {	
 	static RenderPanel renderPanel;
 	static RenderContext renderContext;
-	static Shader normalShader;
-	static Shader diffuseShader;
-	static Material material;
+	static Shader normalShader, diffuseShader, diffuseShaderInit, colorDiffuseShader;
+	static Material material, material2, material3, materialC;
 	static SimpleSceneManager sceneManager = new SimpleSceneManager();
 	static Camera camera = sceneManager.getCamera();
-	static Shape shape;
+	static Shape shape, shape2, shape3;
 	static float currentstep, basicstep;
 	static int width=500;
 	static int height=500;
@@ -32,7 +35,7 @@ public class simple6
 	static int isIn=0;
 	static Vector3f axis = new Vector3f();
 	static float theta;
-	static int exerciseNr=4;
+	static int exerciseNr=2;
 
 	public static final class RotationalBodyRenderPanel extends GLRenderPanel
 	{
@@ -54,30 +57,39 @@ public class simple6
 		public final void init(RenderContext r)
 		{
 			renderContext = r;
-			this.body = new RotationalBezierBody(bezierSegments, controlPoints, nrEvPoints, nrRotStepts);
-			this.rotationalBody = body.createBody();
-			
-			shape = rotationalBody;
+			rotationalBody = rotationalBezierBody(bezierSegments, controlPoints, nrEvPoints, nrRotStepts);
 			
 			this.renderer(r, rotationalBody);
 		}
 		
-		public void renderer(RenderContext r, Shape shape)
+		public final static Shape rotationalBezierBody(int bezierSegments, Vector3f[] controlPoints, int nrEvPoints, int nrRotStepts) {
+			RotationalBezierBody body = new RotationalBezierBody(bezierSegments, controlPoints, nrEvPoints, nrRotStepts);
+			Shape rotationalBody = body.createBody();
+			return rotationalBody;
+		}
+		
+		public void renderer(RenderContext r, Shape rotationalBody)
 		{
 			renderContext = r;
 			
+			shape = rotationalBody;
+
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,0f,10f));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
+			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+			
 			// Lights
 			Light light1 = new Light();
-			light1.direction= new Vector3f(0f,0f, -1.f);
+			light1.direction= new Vector3f(0f,0f, 1.f);
 			light1.type=Type.DIRECTIONAL;
-			light1.color= new Vector4f(1.f,1.f,1.f,1.f);
+			light1.color= new Vector4f(0.5f,0.5f,0.5f,0.2f);
 			sceneManager.addLight(light1);
 			
 			Light light2 = new Light();
-			light2.position= new Vector3f(1f, 0f, -2f); 
+			light2.position= new Vector3f(0f, 0f, 0f); 
 			light2.type=Type.POINT;
 			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
-			//sceneManager.addLight(light2);
+			sceneManager.addLight(light2);
 			
 			
 			// load shader
@@ -88,10 +100,18 @@ public class simple6
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
 		    }
+		    
+		    diffuseShaderInit = renderContext.makeShader();
+		    try {
+		    	diffuseShaderInit.load("../jrtr/shaders/diffuseInit.vert", "../jrtr/shaders/diffuseInit.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }	
 	
 		    diffuseShader = renderContext.makeShader();
 		    try {
-		    	diffuseShader.load("../jrtr/shaders/diffuseInit.vert", "../jrtr/shaders/diffuseInit.frag");
+		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
 		    } catch(Exception e) {
 		    	System.out.print("Problem with shader:\n");
 		    	System.out.print(e.getMessage());
@@ -109,6 +129,7 @@ public class simple6
 				System.out.print(e.getMessage());
 			}
 			
+			
 			// Add the object to the scene Manager
 			sceneManager.addShape(shape);
 					
@@ -117,6 +138,181 @@ public class simple6
 		}
 	}
 	
+	public final static class SceneRenderPanel extends GLRenderPanel
+	{
+		/**
+		 * Initialization call-back. We initialize our renderer here.
+		 * 
+		 * @param r	the render context that is associated with this render panel
+		 */
+		public final void init(RenderContext r)
+		{
+			renderContext = r;
+			
+			shape = quad();
+    		
+
+			Shape[] shapes = {shape};
+			renderer(r, shapes);
+		}
+		
+		public void renderer(RenderContext r, Shape[] shapes)
+		{
+			for(Shape shape: shapes)
+			{
+				sceneManager.addShape(shape);
+			}
+	
+			// Add the scene to the renderer
+			renderContext.setSceneManager(sceneManager);
+			
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,10f));
+			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
+			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+			
+			// Load some more shaders
+		    normalShader = renderContext.makeShader();
+		    try {
+		    	normalShader.load("../jrtr/shaders/normal.vert", "../jrtr/shaders/normal.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+
+		    diffuseShaderInit = renderContext.makeShader();
+		    try {
+		    	diffuseShaderInit.load("../jrtr/shaders/diffuseInit.vert", "../jrtr/shaders/diffuseInit.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }	
+		    
+		    colorDiffuseShader = renderContext.makeShader();
+		    try {
+		    	colorDiffuseShader.load("../jrtr/shaders/colorDiffuse.vert", "../jrtr/shaders/colorDiffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }
+
+		    // Make a material that can be used for shading
+			materialC = new Material();
+			materialC.shader = colorDiffuseShader;
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+		    
+		    
+		    diffuseShader = renderContext.makeShader();
+		    try {
+		    	diffuseShader.load("../jrtr/shaders/diffuse.vert", "../jrtr/shaders/diffuse.frag");
+		    } catch(Exception e) {
+		    	System.out.print("Problem with shader:\n");
+		    	System.out.print(e.getMessage());
+		    }		
+
+		    // Make a material that can be used for shading
+			material = new Material();
+			material.shader = diffuseShader;
+			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+			material.diffuseMap = renderContext.makeTexture();
+			try {
+				material.diffuseMap.load("../textures/plant.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
+			
+			// Make a material that can be used for shading
+			material2 = new Material();
+			material2.shader = colorDiffuseShader;
+			//material2.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+			
+
+			// Make a material that can be used for shading
+			material3 = new Material();
+			material3.shader = diffuseShader;
+			material3.diffuseMap = renderContext.makeTexture();
+			//material3.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
+			try {
+				material3.diffuseMap.load("../textures/wood.jpg");
+			} catch(Exception e) {				
+				System.out.print("Could not load texture.\n");
+				System.out.print(e.getMessage());
+			}
+				
+		}
+		
+		public final static Shape quad(){
+
+			float v[] = { 	1,1,1, 		1,1,-1, 	-1,1,-1, 	-1,1,1,		// top
+					-1,-1,1,	-1,-1,-1, 	1,-1,-1, 	1,-1,1};	// bottom
+			
+			float c[] = {	1,0,0,	1,1,0, 	1,0,0, 	1,1,0,
+				 	1,1,0, 	1,0,0, 	1,1,0, 	1,0,0 }; 
+			
+			
+			int indices[] = {	0,2,3, 	0,1,2, //top
+						7,3,4, 	7,0,3, //front
+						6,0,7, 	6,1,0, //right
+						5,1,6, 	5,2,1, //back
+						4,2,5, 	4,3,2, //left
+						6,4,5, 	6,7,4  //bottom
+					};
+			
+			VertexData vertexData = renderContext.makeVertexData(8);
+			vertexData.addElement(v, Semantic.POSITION, 3);
+			vertexData.addElement(c, Semantic.COLOR, 3);
+			vertexData.addIndices(indices);
+			
+			MeshData mesh = new MeshData(vertexData, renderContext);
+			vertexData = mesh.vertexData;
+
+			mesh.loop();
+			vertexData = mesh.vertexData;
+			
+			Shape quad = new Shape(vertexData);  
+			
+			return quad;
+		}
+		
+		public final static Shape spikedQuad(){
+			float v[] = { 	1,1,1, 		1,1,-1, 	-1,1,-1, 	-1,1,1,		// top
+					-1,-1,1,	-1,-1,-1, 	1,-1,-1, 	1,-1,1,     	// bottom
+					0,-4,0,		0,4,0, 		4,0,0,				//spikes
+					-4,0,0,		0,0,4,		0,0,-4};   			// spikes
+
+					
+			float c[] = {	1,0,0,	1,1,0, 	1,0,0, 	1,1,0,
+					1,1,0, 	1,0,0, 	1,1,0, 	1,0,0, 
+					0,0,1, 	0,0,1, 	0,0,1,	
+					0,0,1,	0,0,1,	0,0,1};
+
+			int indices[] = {	7,4,8,	4,5,8,	5,6,8, 	6,7,8, 	//bottom
+						0,1,9,	1,2,9,	2,3,9,	3,0,9, 	//top
+						6,1,10,	1,0,10,	0,7,10,	7,6,10,	//right
+						4,3,11,	3,2,11,	2,5,11,	5,4,11,	//left
+						7,0,12,	0,3,12,	3,4,12,	4,7,12,	//front
+						5,2,13,	2,1,13,	1,6,13,	6,5,13	//back					
+					};
+			
+			VertexData vertexData = renderContext.makeVertexData(14);
+			vertexData.addElement(v, Semantic.POSITION, 3);
+			vertexData.addElement(c, Semantic.COLOR, 3);
+			vertexData.addIndices(indices);
+			
+			MeshData mesh = new MeshData(vertexData, renderContext);
+			vertexData = mesh.vertexData;	
+			
+			mesh.loop();
+			mesh.loop();
+			mesh.loop();
+			vertexData = mesh.vertexData;
+			
+			Shape spikedQuad = new Shape(vertexData);  
+			
+			return spikedQuad;
+		}
+		
+	}
 	
 	
 	public static class PointToSphere
@@ -226,13 +422,21 @@ public class simple6
 				case 'm': {
 					// Set a material for more complex shading of the shape
 					if(shape.getMaterial() == null) {
-						shape.setMaterial(material);
+						shape.setMaterial(material2);
 					} else
 					{
 						shape.setMaterial(null);
 						renderContext.useDefaultShader();
 					}
 					break;
+				}
+				case 'l': {
+					// loop subdivision
+					VertexData vertexData = shape.getVertexData();
+					MeshData mesh = new MeshData(vertexData, renderContext);
+					mesh.loop();
+					vertexData = mesh.vertexData;
+					shape = new Shape(vertexData);  
 				}
 			}
 			
@@ -266,7 +470,10 @@ public class simple6
 		controlPoints[5] = new Vector3f(2,2,0);
 		controlPoints[6] = new Vector3f(1,3,0);
 		
-		renderPanel = new RotationalBodyRenderPanel(2, controlPoints, 2, 10);
+		if(exerciseNr==1)
+			renderPanel = new RotationalBodyRenderPanel(2, controlPoints, 2, 10);
+		else if(exerciseNr==2)
+			renderPanel = new SceneRenderPanel();
 
 		currentstep = 1f;
 		// Add a mouse and key listener

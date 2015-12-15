@@ -180,7 +180,7 @@ public final class RotationalBezierBody {
 		// normals
 		Vector4f tangentVector = new Vector4f((float) Math.pow(t, 2)*3, 2*t, 1, 0);
 		vectors.transform(tangentVector);
-		Vector3f nt = new Vector3f(-tangentVector.y, tangentVector.x, 0);
+		Vector3f nt = new Vector3f(tangentVector.y, -tangentVector.x, 0);
 		nt.normalize();
 		point[1] = nt;
 		
