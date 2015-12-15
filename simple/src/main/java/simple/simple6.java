@@ -30,8 +30,8 @@ public class simple6
 	static int height=500;
 	static boolean withObj=true;
 	static int radius=Math.min(width,height);
-	static Vector3f p1;
-	static Vector3f p2;
+	static Vector2f p1;
+	static Vector2f p2;
 	static int isIn=0;
 	static Vector3f axis = new Vector3f();
 	static float theta;
@@ -158,10 +158,8 @@ public class simple6
 		
 		public void renderer(RenderContext r, Shape[] shapes)
 		{
-			for(Shape shape: shapes)
-			{
-				sceneManager.addShape(shape);
-			}
+			sceneManager.addShape(shape);
+			
 	
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
@@ -263,12 +261,6 @@ public class simple6
 			vertexData.addElement(c, Semantic.COLOR, 3);
 			vertexData.addIndices(indices);
 			
-			MeshData mesh = new MeshData(vertexData, renderContext);
-			vertexData = mesh.vertexData;
-
-			mesh.loop();
-			vertexData = mesh.vertexData;
-			
 			Shape quad = new Shape(vertexData);  
 			
 			return quad;
@@ -314,35 +306,16 @@ public class simple6
 		
 	}
 	
-	
-	public static class PointToSphere
-	{
-		public static Vector3f getVectorFromPoint(MouseEvent e)
-		{
-			int width = renderPanel.getCanvas().getWidth();
-	        int height = renderPanel.getCanvas().getHeight();
-			int x = e.getX();
-            int y = e.getY();
-            float x3D = (float) x/((float) radius/2);
-            float y3D = (float) y/((float) radius/2);
-            x3D=x3D-(float) width/radius;
-            y3D= (float)height/radius-y3D;
-            float z = 1-x3D*x3D-y3D*y3D;
-            float z3D = z>0? (float) Math.sqrt(z):0.1f;
-            Vector3f v = new Vector3f(x3D,y3D,z3D);
-            v.normalize();
-            return v;
-		}
-	}
-	
-	public static class TrackBallMouseListener implements MouseListener
+	public static class MyMouseListener implements MouseListener
 	{
 		@Override
     	public void mousePressed(MouseEvent e) {
 			
     		if(isIn==1)
     		{
-	    		p1=PointToSphere.getVectorFromPoint(e);
+	    		int x = e.getX();
+	            int y = e.getY();
+	            p1 = new Vector2f(x,y);
     		}
     		
     	}
@@ -359,7 +332,7 @@ public class simple6
 	 * A mouse listener for the main window of this application. This can be
 	 * used to process mouse events.
 	 */
-	public static class TrackBallMouseMotionListener implements MouseMotionListener
+	public static class TrackballMouseMotionListener implements MouseMotionListener
 	{		
 		
 		@Override
@@ -367,19 +340,50 @@ public class simple6
 
     		
 			if(isIn==1)
-    		{				
-				p2=PointToSphere.getVectorFromPoint(e);
-	            
-	            axis.cross(p1, p2);
-	            theta = (float) (p1.angle(p2));
-	            
-	            Matrix4f rot = new Matrix4f();
-	            AxisAngle4f axisAngle = new AxisAngle4f(axis, theta);
-	            rot.set(axisAngle);
-	            
-	            shape.getTransformation().mul(rot, shape.getTransformation());
+    		{
 
-	            p1=new Vector3f(p2);
+				Matrix4f cam = new Matrix4f(camera.getCameraMatrix());
+				//cam.invert();
+				
+	    		int x = e.getX();
+	            int y = e.getY();
+	            
+	            p2 = new Vector2f(x,y);
+	            
+	            
+	            Vector2f dp = new Vector2f();
+	            dp.sub(p2, p1);
+	            float thetaX = dp.x/width;
+	            float thetaY = dp.y/height; 
+	            Vector3f axisX = camera.getUpVector();
+	            Vector3f axisY = axisY();
+
+	            AxisAngle4f axisAngleX = new AxisAngle4f(axisX, (float) (-currentstep*thetaX));
+	            AxisAngle4f axisAngleY = new AxisAngle4f(axisY, (float) (-currentstep*thetaY));
+	            
+	           
+	            Vector3f lap = camera.getLookAtPoint();
+	            Vector3f cop = camera.getCenterOfProjection();
+	            Vector3f uv = camera.getUpVector();
+	            Vector3f diff = new Vector3f();
+	            diff.sub(lap, cop);
+	            //Vector3f diff1=new Vector3f(diff);
+	            
+	            
+	            Matrix4f rotX = new Matrix4f();
+	            rotX.set(axisAngleX);
+	            Matrix4f rotY = new Matrix4f();
+	            rotY.set(axisAngleY);
+	            
+				rotX.transform(diff);
+				rotY.transform(diff);
+				diff.add(cop);
+				camera.setLookAtPoint(diff);
+				
+				rotY.transform(uv);
+				camera.setUpVector(uv);
+				
+	            p1=new Vector2f(p2);
     		}
 			
 
@@ -388,32 +392,72 @@ public class simple6
 		}
 		@Override
 		public void mouseMoved(MouseEvent e) {}
+		
+		public Vector3f axisY()
+		{
+			Vector3f cop = camera.getCenterOfProjection();
+			Vector3f lap = camera.getLookAtPoint();
+			Vector3f uv = camera.getUpVector();
+			
+			Vector3f z = new Vector3f();
+			z.sub(cop, lap);
+			z.normalize();
+			
+			Vector3f x =  new Vector3f();
+			x.cross(uv, z);
+			x.normalize();
+			
+			return x;
+		}
+		
 	}
-	
-	/**
-	 * A key listener for the main window. Use this to process key events.
-	 * Currently this provides the following controls:
-	 * 's': stop animation
-	 * 'p': play animation
-	 * '+': accelerate rotation
-	 * '-': slow down rotation
-	 * 'd': default shader
-	 * 'n': shader using surface normals
-	 * 'm': use a material for shading
-	 */
-	public static class SimpleKeyListener implements KeyListener
+		
+
+	public static class MyKeyListener implements KeyListener
 	{
 		public void keyPressed(KeyEvent e)
 		{
 			switch(e.getKeyChar())
 			{
+				case 'w': {
+					// move forward
+					moveX(currentstep);
+					break;
+				}
+				case 's': {
+					// move backwards
+					moveX(-currentstep);
+					break;
+				}
+				case 'a': {
+					// move left
+					moveY(-currentstep);
+					break;
+				}
+				case 'd': {
+					// move right
+					moveY(currentstep);
+					break;
+				}
+				case 'e':{
+					// move up
+					moveZ(currentstep);
+					break;
+				}
+				case 'q':{
+					// move down
+					moveZ(-currentstep);
+					break;
+				}
+				
+				
 				case 'n': {
 					// Remove material from shape, and set "normal" shader
 					shape.setMaterial(null);
 					renderContext.useShader(normalShader);
 					break;
 				}
-				case 'd': {
+				case 'p': {
 					// Remove material from shape, and set "default" shader
 					shape.setMaterial(null);
 					renderContext.useDefaultShader();
@@ -435,9 +479,11 @@ public class simple6
 					VertexData vertexData = shape.getVertexData();
 					MeshData mesh = new MeshData(vertexData, renderContext);
 					mesh.loop();
-					vertexData = mesh.vertexData;
-					shape = new Shape(vertexData);  
+					VertexData meshData = mesh.vertexData;
+					//int n = meshData.getNumberOfVertices();
+					shape.setVertexData(meshData);
 				}
+					
 			}
 			
 			// Trigger redrawing
@@ -447,6 +493,98 @@ public class simple6
 		public void keyReleased(KeyEvent e){}
 
 		public void keyTyped(KeyEvent e){}
+		
+		
+		public void moveX(float n)
+		{
+
+			Matrix4f cam = new Matrix4f(camera.getCameraMatrix());
+			cam.invert();
+			Vector3f cop = camera.getCenterOfProjection();
+			Vector3f lap = camera.getLookAtPoint();
+			
+			Vector3f translationAxis = new Vector3f();
+			translationAxis.sub(lap, cop);
+			translationAxis.scale(n);
+			translationAxis.normalize();
+			
+			cop.add(translationAxis);
+			camera.setCenterOfProjection(cop);
+			lap.add(translationAxis);
+			camera.setLookAtPoint(lap);
+			
+		}
+		
+		public void moveY(float n)
+		{
+			Vector3f cop = camera.getCenterOfProjection();
+			Vector3f lap = camera.getLookAtPoint();
+			Vector3f uv = camera.getUpVector();
+			
+			Vector3f z = new Vector3f();
+			z.sub(cop, lap);
+			z.normalize();
+			
+			Vector3f translationAxis =  new Vector3f();
+			translationAxis.cross(uv, z);
+			translationAxis.scale(n);
+			
+			cop.add(translationAxis);
+			camera.setCenterOfProjection(cop);
+			lap.add(translationAxis);
+			camera.setLookAtPoint(lap);
+			
+			//obj move
+			if(withObj)
+			{
+				Matrix4f plane = shape.getTransformation();
+				Matrix4f trans = new Matrix4f();
+				trans.set(1);
+				trans.setTranslation(translationAxis);
+				plane.mul(trans, plane);
+				shape.setTransformation(plane);
+			}
+		}
+		
+		public void moveZ(float n)
+		{
+			Vector3f cop = camera.getCenterOfProjection();
+			Vector3f lap = camera.getLookAtPoint();
+			Vector3f uv = camera.getUpVector();
+						
+			Vector3f translationAxis =  new Vector3f();
+			translationAxis = uv;
+			//translationAxis.scale(n);
+			
+			if(n>0)
+			{
+				cop.add(translationAxis);
+				lap.add(translationAxis);
+			}
+			else
+			{
+				cop.sub(translationAxis);
+				lap.sub(translationAxis);
+			}
+			//cop.add(translationAxis);
+			camera.setCenterOfProjection(cop);
+			//lap.add(translationAxis);
+			camera.setLookAtPoint(lap);
+			
+			
+			// obj move
+			if(withObj)
+			{
+				Matrix4f plane = shape.getTransformation();
+				Matrix4f trans = new Matrix4f();
+				trans.set(1);
+				translationAxis.negate();
+				trans.setTranslation(translationAxis);
+				plane.mul(trans, plane);
+				shape.setTransformation(plane);
+			}
+			
+		}
 
 	}
 	
@@ -477,9 +615,9 @@ public class simple6
 
 		currentstep = 1f;
 		// Add a mouse and key listener
-		renderPanel.getCanvas().addKeyListener(new SimpleKeyListener());
-	    renderPanel.getCanvas().addMouseListener(new TrackBallMouseListener());
-	    renderPanel.getCanvas().addMouseMotionListener(new TrackBallMouseMotionListener());
+		renderPanel.getCanvas().addKeyListener(new MyKeyListener());
+	    renderPanel.getCanvas().addMouseListener(new MyMouseListener());
+	    renderPanel.getCanvas().addMouseMotionListener(new TrackballMouseMotionListener());
 		
 		// Make the main window of this application and add the renderer to it
 		JFrame jframe = new JFrame("simple");

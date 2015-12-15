@@ -404,6 +404,40 @@ public class MeshData {
 			Vertex newVertex = new Vertex(newPosition);
 			newVertices.add(newVertex);
 		}
+
+		// for every old vertex update with all the adjacent vertices
+		ArrayList<Vertex> updatedOldVertices = new ArrayList<Vertex>();
+		for(Vertex vertex : vertexTable)
+		{
+			List<Vertex> adjacentVertices = findVertices(vertex);
+			float bita=0;
+			int n = adjacentVertices.size();
+			if(n>3)
+				bita = 3f/(8*n);
+			else if(n==3)
+				bita = 3f/16f;
+			
+			Vector3f updatedPosition = new Vector3f();
+			for(Vertex adjacentVertex : adjacentVertices)
+			{
+				Vector3f tempPosition = new Vector3f(adjacentVertex.position);
+				tempPosition.scale(bita);
+				updatedPosition.add(tempPosition);				
+			}
+			
+			float oneMinusNBita=1f-n*bita;
+			Vector3f tmp = new Vector3f(vertex.position);
+			tmp.scale(oneMinusNBita);
+			updatedPosition.add(tmp);
+			
+			Vertex updatedVertex = new Vertex(updatedPosition);
+			updatedOldVertices.add(updatedVertex);
+		}
+
+		List<Vertex> newSetOfVertices = new ArrayList<Vertex>();
+		newSetOfVertices.addAll(updatedOldVertices);
+		newSetOfVertices.addAll(newVertices);
+		
 		
 		// create the triangles
 		int nrOldVertices = vertexTable.size();
@@ -442,39 +476,6 @@ public class MeshData {
 			indices[4*3*j+3*3+2] = edgesIndex[2]+nrOldVertices;
 		}
 		
-		// for every old vertex update with all the adjacent vertices
-		ArrayList<Vertex> updatedOldVertices = new ArrayList<Vertex>();
-		for(Vertex vertex : vertexTable)
-		{
-			List<Vertex> adjacentVertices = findVertices(vertex);
-			float bita=0;
-			int n = adjacentVertices.size();
-			if(n>3)
-				bita = 3f/(8*n);
-			else if(n==3)
-				bita = 3f/16f;
-			
-			Vector3f updatedPosition = new Vector3f();
-			for(Vertex adjacentVertex : adjacentVertices)
-			{
-				Vector3f tempPosition = new Vector3f(adjacentVertex.position);
-				tempPosition.scale(bita);
-				updatedPosition.add(tempPosition);				
-			}
-			
-			float oneMinusNBita=1-n*bita;
-			Vector3f tmp = new Vector3f(vertex.position);
-			tmp.scale(oneMinusNBita);
-			updatedPosition.add(tmp);
-			
-			Vertex updatedVertex = new Vertex(updatedPosition);
-			updatedOldVertices.add(updatedVertex);
-		}
-		
-		List<Vertex> newSetOfVertices = new ArrayList<Vertex>();
-		newSetOfVertices.addAll(updatedOldVertices);
-		newSetOfVertices.addAll(newVertices);
-
 		createMesh(newSetOfVertices, indices);
 	}
 	

@@ -14,6 +14,10 @@ public class Shape {
 
 	private Material material;
 	private VertexData vertexData;
+	public void setVertexData(VertexData vertexData) {
+		this.vertexData = vertexData;
+	}
+
 	private Matrix4f t;
 	private float radius;
 	private Vector3f center;
