@@ -430,8 +430,6 @@ public class SWRenderContext implements RenderContext {
 		double oneOverW = getOneOverW(pixel, barCoord);
 		
 		double color = u/oneOverW;
-		if(color<0 || color>1)
-			System.out.println("color: "+color);
 			
 		return color;
 	}

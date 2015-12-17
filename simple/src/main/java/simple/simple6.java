@@ -4,8 +4,7 @@ import jrtr.*;
 import jrtr.Light.Type;
 import jrtr.VertexData.Semantic;
 import jrtr.glrenderer.*;
-import simple.simple4.CylinderRenderPanel;
-import simple.simple4.TorusRenderPanel;
+import jrtr.swrenderer.SWRenderPanel;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -149,24 +148,63 @@ public class simple6
 		{
 			renderContext = r;
 			
-			shape = quad();
+			Vector3f[] controlPoints = new Vector3f[7];
+			controlPoints[0] = new Vector3f(1,-3,0);
+			controlPoints[1] = new Vector3f(2,-2,0);
+			controlPoints[2] = new Vector3f(2,-1,0);
+			controlPoints[3] = new Vector3f(1,0,0);
+			controlPoints[4] = new Vector3f(2,1,0);
+			controlPoints[5] = new Vector3f(2,2,0);
+			controlPoints[6] = new Vector3f(1,3,0);
+			
+			shape = RotationalBodyRenderPanel.rotationalBezierBody(2, controlPoints, 5, 20);
+			
+			shape2 = quad();
+    		Matrix4f t = shape2.getTransformation();
+			Matrix4f trans = new Matrix4f();
+    		Vector3f vector = new Vector3f(5f, 0f, 0f);
+    		trans.setTranslation(vector);
+    		t.add(trans);
+    		shape2.setTransformation(t);
     		
+			shape3 = spikedQuad();
+    		Matrix4f t2 = shape3.getTransformation();
+			Matrix4f trans2 = new Matrix4f();
+    		Vector3f vector2 = new Vector3f(-5f, 0f, 0f);
+    		trans2.setTranslation(vector2);
+    		t2.add(trans2);
+    		shape3.setTransformation(t2);
 
-			Shape[] shapes = {shape};
+			Shape[] shapes = {shape, shape2, shape3};
 			renderer(r, shapes);
 		}
 		
 		public void renderer(RenderContext r, Shape[] shapes)
 		{
-			sceneManager.addShape(shape);
-			
+			for(Shape shape: shapes)
+			{
+				sceneManager.addShape(shape);
+			}
 	
 			// Add the scene to the renderer
 			renderContext.setSceneManager(sceneManager);
 			
-			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,10f));
+			sceneManager.getCamera().setCenterOfProjection(new Vector3f(0f,2f,20f));
 			sceneManager.getCamera().setLookAtPoint( new Vector3f(0f,0f,0f));
 			sceneManager.getCamera().setUpVector(new Vector3f(0f,1f,0f));
+
+			// Lights
+			Light light1 = new Light();
+			light1.direction= new Vector3f(0f,0f, 1.f);
+			light1.type=Type.DIRECTIONAL;
+			light1.color= new Vector4f(0.5f,0.5f,0.5f,0.2f);
+			sceneManager.addLight(light1);
+			
+			Light light2 = new Light();
+			light2.position= new Vector3f(0f, 0f, 0f); 
+			light2.type=Type.POINT;
+			light2.color= new Vector4f(0.f,0.f,1.f,1.f);
+			sceneManager.addLight(light2);
 			
 			// Load some more shaders
 		    normalShader = renderContext.makeShader();
@@ -210,7 +248,6 @@ public class simple6
 		    // Make a material that can be used for shading
 			material = new Material();
 			material.shader = diffuseShader;
-			//material.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
 			material.diffuseMap = renderContext.makeTexture();
 			try {
 				material.diffuseMap.load("../textures/plant.jpg");
@@ -222,20 +259,6 @@ public class simple6
 			// Make a material that can be used for shading
 			material2 = new Material();
 			material2.shader = colorDiffuseShader;
-			//material2.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
-			
-
-			// Make a material that can be used for shading
-			material3 = new Material();
-			material3.shader = diffuseShader;
-			material3.diffuseMap = renderContext.makeTexture();
-			//material3.diffuse = new Vector3f(0.1f, 0.1f, 1.f);
-			try {
-				material3.diffuseMap.load("../textures/wood.jpg");
-			} catch(Exception e) {				
-				System.out.print("Could not load texture.\n");
-				System.out.print(e.getMessage());
-			}
 				
 		}
 		
@@ -293,11 +316,6 @@ public class simple6
 			
 			MeshData mesh = new MeshData(vertexData, renderContext);
 			vertexData = mesh.vertexData;	
-			
-			mesh.loop();
-			mesh.loop();
-			mesh.loop();
-			vertexData = mesh.vertexData;
 			
 			Shape spikedQuad = new Shape(vertexData);  
 			
@@ -466,22 +484,31 @@ public class simple6
 				case 'm': {
 					// Set a material for more complex shading of the shape
 					if(shape.getMaterial() == null) {
-						shape.setMaterial(material2);
+						shape.setMaterial(material);
+						shape2.setMaterial(material2);
+						shape3.setMaterial(material2);
 					} else
 					{
 						shape.setMaterial(null);
+						shape2.setMaterial(null);
+						shape3.setMaterial(null);
 						renderContext.useDefaultShader();
 					}
 					break;
 				}
 				case 'l': {
 					// loop subdivision
-					VertexData vertexData = shape.getVertexData();
+					VertexData vertexData = shape2.getVertexData();
 					MeshData mesh = new MeshData(vertexData, renderContext);
 					mesh.loop();
 					VertexData meshData = mesh.vertexData;
-					//int n = meshData.getNumberOfVertices();
-					shape.setVertexData(meshData);
+					shape2.setVertexData(meshData);
+					
+					VertexData vertexData2 = shape3.getVertexData();
+					MeshData mesh2 = new MeshData(vertexData2, renderContext);
+					mesh2.loop();
+					VertexData meshData2 = mesh2.vertexData;
+					shape3.setVertexData(meshData2);
 				}
 					
 			}
@@ -534,16 +561,6 @@ public class simple6
 			lap.add(translationAxis);
 			camera.setLookAtPoint(lap);
 			
-			//obj move
-			if(withObj)
-			{
-				Matrix4f plane = shape.getTransformation();
-				Matrix4f trans = new Matrix4f();
-				trans.set(1);
-				trans.setTranslation(translationAxis);
-				plane.mul(trans, plane);
-				shape.setTransformation(plane);
-			}
 		}
 		
 		public void moveZ(float n)
@@ -571,19 +588,7 @@ public class simple6
 			//lap.add(translationAxis);
 			camera.setLookAtPoint(lap);
 			
-			
-			// obj move
-			if(withObj)
-			{
-				Matrix4f plane = shape.getTransformation();
-				Matrix4f trans = new Matrix4f();
-				trans.set(1);
-				translationAxis.negate();
-				trans.setTranslation(translationAxis);
-				plane.mul(trans, plane);
-				shape.setTransformation(plane);
-			}
-			
+						
 		}
 
 	}
@@ -609,7 +614,7 @@ public class simple6
 		controlPoints[6] = new Vector3f(1,3,0);
 		
 		if(exerciseNr==1)
-			renderPanel = new RotationalBodyRenderPanel(2, controlPoints, 2, 10);
+			renderPanel = new RotationalBodyRenderPanel(2, controlPoints, 5, 20);
 		else if(exerciseNr==2)
 			renderPanel = new SceneRenderPanel();
 

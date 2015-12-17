@@ -9,6 +9,9 @@ import java.util.ListIterator;
 import javax.vecmath.Vector2f;
 import javax.vecmath.Vector3f;
 
+import jrtr.VertexData.Semantic;
+import jrtr.glrenderer.GLVertexData;
+
 /**
  * This class represents a geometric object that is stored in a mesh structure.
  * Each vertix knows its adjacent vertices, edges and faces
@@ -365,10 +368,13 @@ public class MeshData {
 	 * consists of triangles
 	 */
 	public void loop() {
+		
+		//VertexData newVertexData = new GLVertexData();
+		
 		// for every edge get the middle weighted vertex
 		// create a list of the new Vertices
 		// Note: index of new Vertex is the same as the index of the Edge
-		ArrayList<Vertex> newVertices = new ArrayList<Vertex>();		
+		ArrayList<Vertex> newVertices = new ArrayList<Vertex>();	
 		for(Edge edge : edgeTable)
 		{
 			Vertex edgeVertex1 = vertexTable.get(edge.v1);
@@ -402,9 +408,13 @@ public class MeshData {
 			newPosition.scale(1f/8f);
 			
 			Vertex newVertex = new Vertex(newPosition);
+			Vector3f newColor = new Vector3f(edgeVertex1.color);
+			newColor.add(new Vector3f(edgeVertex2.color));
+			newColor.normalize();
+			newVertex.color = new Vector3f(newColor);
 			newVertices.add(newVertex);
 		}
-
+		
 		// for every old vertex update with all the adjacent vertices
 		ArrayList<Vertex> updatedOldVertices = new ArrayList<Vertex>();
 		for(Vertex vertex : vertexTable)
@@ -431,6 +441,7 @@ public class MeshData {
 			updatedPosition.add(tmp);
 			
 			Vertex updatedVertex = new Vertex(updatedPosition);
+			updatedVertex.color = vertex.color;
 			updatedOldVertices.add(updatedVertex);
 		}
 
@@ -458,6 +469,9 @@ public class MeshData {
 			edgesIndex[0] = edgeTable.indexOf(edges.get(0));
 			edgesIndex[1] = edgeTable.indexOf(edges.get(1));
 			edgesIndex[2] = edgeTable.indexOf(edges.get(2));
+			
+			Integer[] vertices = new Integer[3];
+			findVertices(face).toArray(vertices);
 			
 			for(int i=0; i<nrEdges; i++)
 			{
